@@ -3,9 +3,8 @@ import type { MemberRecord } from '../database/database.types';
 
 export type CreateMemberInput = {
   memberCode: string;
-  fullName: string;
+  fullName?: string;
   contactNumber?: string;
-  referenceNote?: string;
 };
 
 export async function listMembers(db: SQLiteDatabase): Promise<MemberRecord[]> {
@@ -31,28 +30,24 @@ export async function createMember(
   db: SQLiteDatabase,
   input: CreateMemberInput
 ): Promise<number> {
-  const memberCode = input.memberCode.trim().toUpperCase();
-  const fullName = input.fullName.trim();
+  const memberCode = input.memberCode.trim();
+  const fullName = input.fullName?.trim() ?? '';
 
   if (!memberCode) {
-    throw new Error('Enter a member ID, such as A1.');
+    throw new Error('Enter a member ID, such as 1.');
   }
-  if (!/^[A-Z0-9-]{1,20}$/.test(memberCode)) {
-    throw new Error('Member ID can contain letters, numbers, and hyphens only.');
-  }
-  if (!fullName) {
-    throw new Error('Enter the member name.');
+  if (!/^\d{1,10}$/.test(memberCode)) {
+    throw new Error('Member ID must contain numbers only.');
   }
 
   let memberId = 0;
   await db.withTransactionAsync(async () => {
     const result = await db.runAsync(
       `INSERT INTO members (member_code, full_name, contact_number, reference_note)
-       VALUES (?, ?, ?, ?)`,
+       VALUES (?, ?, ?, NULL)`,
       memberCode,
       fullName,
-      input.contactNumber?.trim() || null,
-      input.referenceNote?.trim() || null
+      input.contactNumber?.trim() || null
     );
     memberId = result.lastInsertRowId;
 

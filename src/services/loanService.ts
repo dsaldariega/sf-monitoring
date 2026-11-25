@@ -127,6 +127,8 @@ export async function createLoan(db: SQLiteDatabase, input: CreateLoanInput): Pr
     throw new Error('Loan term must be between 1 and 36 months.');
   }
 
+  const alias = input.alias?.trim().toUpperCase() || '';
+
   const member = await db.getFirstAsync<{ id: number; is_active: number }>(
     'SELECT id, is_active FROM members WHERE id = ?', input.memberId
   );
@@ -153,7 +155,7 @@ export async function createLoan(db: SQLiteDatabase, input: CreateLoanInput): Pr
       input.loanDate.slice(0, 7),
       expectedEndMonth,
       input.remarks?.trim() || null,
-      input.alias?.trim() || null,
+      alias || null,
       input.termMonths
     );
     loanId = result.lastInsertRowId;
@@ -177,7 +179,7 @@ export async function createLoan(db: SQLiteDatabase, input: CreateLoanInput): Pr
       input.principalAmountCentavos,
       input.loanDate,
       loanId,
-      input.alias?.trim() || 'Loan release'
+      alias || 'Loan release'
     );
 
     await db.runAsync(
@@ -198,7 +200,6 @@ export async function createLoan(db: SQLiteDatabase, input: CreateLoanInput): Pr
   });
   return loanId;
 }
-
 
 export async function archiveLoan(
   db: SQLiteDatabase,
@@ -253,5 +254,3 @@ export async function restoreLoan(db: SQLiteDatabase, loanId: number): Promise<v
     );
   });
 }
-
-

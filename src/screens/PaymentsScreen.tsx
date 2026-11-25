@@ -93,29 +93,62 @@ export function PaymentsScreen() {
             <Pressable style={styles.dropdown} onPress={() => setDropdownVisible(value => !value)}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.dropdownValue}>
-                  {selectedLoan ? `${selectedLoan.member_code} · ${selectedLoan.alias || selectedLoan.member_name}` : 'Select a loan'}
+                  {selectedLoan ? `Member ${selectedLoan.member_code} · ${selectedLoan.alias || 'No alias'}` : 'Select a loan'}
                 </Text>
-                {selectedLoan ? <Text style={styles.dropdownHint}>{selectedLoan.member_name} · Balance {formatCentavos(selectedLoan.outstanding_centavos)}</Text> : null}
+                {selectedLoan ? (
+                  <Text style={styles.dropdownHint}>
+                    {selectedLoan.next_due_date ? `Next due ${selectedLoan.next_due_date} · ` : ''}
+                    Balance {formatCentavos(selectedLoan.outstanding_centavos)}
+                  </Text>
+                ) : null}
               </View>
               <Text style={styles.chevron}>{dropdownVisible ? '⌃' : '⌄'}</Text>
             </Pressable>
             {dropdownVisible ? (
               <View style={styles.options}>
                 {loans.map(loan => (
-                  <Pressable key={loan.id} style={[styles.option, loan.id === loanId && styles.optionSelected]}
-                    onPress={() => { setLoanId(loan.id); setDropdownVisible(false); }}>
-                    <Text style={styles.optionTitle}>{loan.member_code} · {loan.alias || loan.member_name}</Text>
-                    <Text style={styles.dropdownHint}>{loan.member_name} · Balance {formatCentavos(loan.outstanding_centavos)}</Text>
+                  <Pressable
+                    key={loan.id}
+                    style={[styles.option, loan.id === loanId && styles.optionSelected]}
+                    onPress={() => { setLoanId(loan.id); setDropdownVisible(false); }}
+                  >
+                    <Text style={styles.optionTitle}>Member {loan.member_code} · {loan.alias || 'No alias'}</Text>
+                    <Text style={styles.dropdownHint}>
+                      {loan.next_due_date ? `Next due ${loan.next_due_date} · ` : ''}
+                      Balance {formatCentavos(loan.outstanding_centavos)}
+                    </Text>
                   </Pressable>
                 ))}
               </View>
             ) : null}
             {selectedLoan ? (
               <View style={styles.balanceCard}>
-                <View style={styles.balanceLine}><Text style={styles.balanceLabel}>Original principal</Text><Text style={styles.balanceValue}>{formatCentavos(selectedLoan.principal_amount_centavos)}</Text></View>
-                <View style={styles.balanceLine}><Text style={styles.balanceLabel}>Scheduled amount paid</Text><Text style={styles.balanceValue}>{formatCentavos(selectedLoan.total_paid_centavos)}</Text></View>
-                <View style={styles.balanceLine}><Text style={styles.balanceLabel}>Penalties outstanding</Text><Text style={styles.penaltyValue}>{formatCentavos(selectedLoan.total_penalties_centavos - selectedLoan.total_penalties_paid_centavos)}</Text></View>
-                <View style={styles.balanceLine}><Text style={styles.totalLabel}>Outstanding balance</Text><Text style={styles.totalValue}>{formatCentavos(selectedLoan.outstanding_centavos)}</Text></View>
+                <View style={styles.balanceLine}>
+                  <Text style={styles.balanceLabel}>Original principal</Text>
+                  <Text style={styles.balanceValue}>{formatCentavos(selectedLoan.principal_amount_centavos)}</Text>
+                </View>
+                <View style={styles.balanceLine}>
+                  <Text style={styles.balanceLabel}>Payment per due date</Text>
+                  <Text style={styles.balanceValue}>{formatCentavos(selectedLoan.next_payment_centavos)}</Text>
+                </View>
+                {selectedLoan.next_due_date ? (
+                  <View style={styles.balanceLine}>
+                    <Text style={styles.balanceLabel}>Next payment date</Text>
+                    <Text style={styles.balanceValue}>{selectedLoan.next_due_date}</Text>
+                  </View>
+                ) : null}
+                <View style={styles.balanceLine}>
+                  <Text style={styles.balanceLabel}>Scheduled amount paid</Text>
+                  <Text style={styles.balanceValue}>{formatCentavos(selectedLoan.total_paid_centavos)}</Text>
+                </View>
+                <View style={styles.balanceLine}>
+                  <Text style={styles.balanceLabel}>Penalties outstanding</Text>
+                  <Text style={styles.penaltyValue}>{formatCentavos(selectedLoan.total_penalties_centavos - selectedLoan.total_penalties_paid_centavos)}</Text>
+                </View>
+                <View style={styles.balanceLine}>
+                  <Text style={styles.totalLabel}>Outstanding balance</Text>
+                  <Text style={styles.totalValue}>{formatCentavos(selectedLoan.outstanding_centavos)}</Text>
+                </View>
               </View>
             ) : null}
             <View style={styles.field}>
@@ -142,10 +175,10 @@ export function PaymentsScreen() {
         {history.length === 0 ? <Text style={styles.empty}>No payments recorded yet.</Text> : history.map(payment => (
           <View key={payment.id} style={styles.historyRow}>
             <View style={styles.historyHeader}>
-              <Text style={styles.optionTitle}>{payment.member_code} · {payment.alias || payment.member_name}</Text>
+              <Text style={styles.optionTitle}>Member {payment.member_code} · {payment.alias || 'No alias'}</Text>
               <Text style={styles.historyAmount}>{formatCentavos(payment.amount_centavos)}</Text>
             </View>
-            <Text style={styles.dropdownHint}>{payment.member_name} · {payment.paid_on}</Text>
+            <Text style={styles.dropdownHint}>{payment.member_name || 'Name not provided'} · {payment.paid_on}</Text>
             {payment.penalty_allocated_centavos > 0 ? (
               <Text style={styles.penaltyNote}>Includes {formatCentavos(payment.penalty_allocated_centavos)} penalty settlement</Text>
             ) : null}

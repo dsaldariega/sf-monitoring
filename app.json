@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Sinking Fund Monitor",
+    "name": "sf-monitoring-app",
     "slug": "sf-monitoring-app",
     "version": "1.0.0",
     "orientation": "portrait",

@@ -7,6 +7,8 @@ export type PaymentLoanOption = {
   principal_amount_centavos: number;
   member_code: string;
   member_name: string;
+  next_payment_centavos: number;
+  next_due_date: string | null;
   total_scheduled_centavos: number;
   total_paid_centavos: number;
   total_penalties_centavos: number;
@@ -38,6 +40,28 @@ export async function listLoansForPayment(db: SQLiteDatabase): Promise<PaymentLo
     `SELECT
        loans.id, loans.alias, loans.loan_date, loans.principal_amount_centavos,
        members.member_code, members.full_name AS member_name,
+       COALESCE((
+         SELECT li.scheduled_amount_centavos
+         FROM loan_installments AS li
+         WHERE li.loan_id = loans.id
+           AND (
+             li.paid_amount_centavos < li.scheduled_amount_centavos
+             OR li.penalty_paid_centavos < li.penalty_amount_centavos
+           )
+         ORDER BY li.due_date ASC, li.installment_number ASC
+         LIMIT 1
+       ), 0) AS next_payment_centavos,
+       (
+         SELECT li.due_date
+         FROM loan_installments AS li
+         WHERE li.loan_id = loans.id
+           AND (
+             li.paid_amount_centavos < li.scheduled_amount_centavos
+             OR li.penalty_paid_centavos < li.penalty_amount_centavos
+           )
+         ORDER BY li.due_date ASC, li.installment_number ASC
+         LIMIT 1
+       ) AS next_due_date,
        COALESCE(SUM(installments.scheduled_amount_centavos), 0) AS total_scheduled_centavos,
        COALESCE(SUM(installments.paid_amount_centavos), 0) AS total_paid_centavos,
        COALESCE(SUM(installments.penalty_amount_centavos), 0) AS total_penalties_centavos,
@@ -136,7 +160,6 @@ export async function recordLoanPayment(
     let remaining = input.amountCentavos;
     let penaltyAllocated = 0;
 
-    // Apply payments to the oldest installment first; settle its penalty before its scheduled amount.
     for (const installment of installments) {
       if (remaining <= 0) break;
 

@@ -14,7 +14,6 @@ export function MembersScreen() {
   const [memberCode, setMemberCode] = useState('');
   const [fullName, setFullName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
-  const [referenceNote, setReferenceNote] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -36,11 +35,10 @@ export function MembersScreen() {
     setError('');
     setSaving(true);
     try {
-      await createMember(db, { memberCode, fullName, contactNumber, referenceNote });
+      await createMember(db, { memberCode, fullName, contactNumber });
       setMemberCode('');
       setFullName('');
       setContactNumber('');
-      setReferenceNote('');
       await refreshMembers();
       Alert.alert('Member added', 'The member record was saved on this device.');
     } catch (cause) {
@@ -55,8 +53,8 @@ export function MembersScreen() {
     Alert.alert(
       nextActive ? 'Reactivate member?' : 'Deactivate member?',
       nextActive
-        ? `Reactivate ${member.member_code}?`
-        : `Deactivate ${member.member_code}? Existing loan and payment history will be preserved.`,
+        ? `Reactivate Member ${member.member_code}?`
+        : `Deactivate Member ${member.member_code}? Existing loan and payment history will be preserved.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -78,13 +76,29 @@ export function MembersScreen() {
   return (
     <ScreenLayout
       title="Members"
-      description="Register members using their assigned ID. These details remain in the local database on this device."
+      description="Register members using a simple numeric ID. Full name is optional for privacy."
     >
-      <SectionCard title="Add member" subtitle="Use an ID such as A1, A2, or another unique reference.">
-        <Field label="Member ID" value={memberCode} onChangeText={setMemberCode} placeholder="e.g. A1" autoCapitalize="characters" />
-        <Field label="Full name" value={fullName} onChangeText={setFullName} placeholder="Member full name" />
-        <Field label="Contact number (optional)" value={contactNumber} onChangeText={setContactNumber} placeholder="Contact number" keyboardType="phone-pad" />
-        <Field label="Private reference / remarks (optional)" value={referenceNote} onChangeText={setReferenceNote} placeholder="Optional note" />
+      <SectionCard title="Add member" subtitle="Use a numeric member ID such as 1, 2, 3, and so on.">
+        <Field
+          label="Member ID"
+          value={memberCode}
+          onChangeText={setMemberCode}
+          placeholder="e.g. 1"
+          keyboardType="number-pad"
+        />
+        <Field
+          label="Full name (optional)"
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="Leave blank for privacy"
+        />
+        <Field
+          label="Contact number (optional)"
+          value={contactNumber}
+          onChangeText={setContactNumber}
+          placeholder="Contact number"
+          keyboardType="phone-pad"
+        />
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <PrimaryButton label={saving ? 'Saving…' : 'Save member'} onPress={handleAddMember} disabled={saving} />
       </SectionCard>
@@ -95,8 +109,10 @@ export function MembersScreen() {
         ) : members.map(member => (
           <View key={member.id} style={styles.memberRow}>
             <View style={styles.memberInfo}>
-              <Text style={styles.memberCode}>{member.member_code}</Text>
-              <Text style={styles.memberName}>{member.full_name}</Text>
+              <Text style={styles.memberCode}>Member {member.member_code}</Text>
+              <Text style={styles.memberName}>
+                {member.full_name.trim() || 'Name not provided'}
+              </Text>
               {member.contact_number ? <Text style={styles.meta}>{member.contact_number}</Text> : null}
               {member.is_active !== 1 ? <Text style={styles.inactive}>Inactive</Text> : null}
             </View>
@@ -121,8 +137,7 @@ type FieldProps = {
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
-  keyboardType?: 'default' | 'phone-pad';
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  keyboardType?: 'default' | 'phone-pad' | 'number-pad';
 };
 
 function Field({ label, ...inputProps }: FieldProps) {
