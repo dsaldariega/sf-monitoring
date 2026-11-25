@@ -27,3 +27,12 @@ Do not delete the database to recover from a migration error. Add a new migratio
 - Penalty settlements are tracked separately from scheduled installment payments.
 - A loan is marked paid only after every scheduled installment and every assessed penalty is fully settled.
 - Each loan collection is also written to the local fund transaction ledger and audit log.
+
+## Dashboard and monthly reports
+
+- Dashboard metrics are live calculations from local SQLite data.
+- Monthly installment targets are based on installments whose due dates fall within the selected calendar month.
+- Actual collections are cash payments recorded within that month.
+- Portfolio outstanding includes unpaid scheduled installment amounts and assessed penalties for active loans.
+- Monthly report finalization stores a JSON snapshot and summary totals in `monthly_reports`.
+- A finalized month cannot be overwritten; historical snapshots are read independently of current loan/payment records.
