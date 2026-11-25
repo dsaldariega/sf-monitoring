@@ -3,12 +3,14 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { useFocusEffect } from '@react-navigation/native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { AppModal, ModalActions } from '../components/AppModal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { DatePickerField } from '../components/DatePickerField';
 import { MetricCard } from '../components/MetricCard';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { SectionCard } from '../components/SectionCard';
 import { theme } from '../constants/theme';
-import { currentSinkingFundWeek, getWeeklySinkingFundSummary, listRecentSinkingFundPayments, recordSinkingFundPayment, type WeeklySinkingFundPayment, type WeeklySinkingFundSummary } from '../services/sinkingFundService';
+import { useToast } from '../components/ToastProvider';
+import { currentSinkingFundWeek, deleteSinkingFundPayment, getWeeklySinkingFundSummary, listRecentSinkingFundPayments, recordSinkingFundPayment, type WeeklySinkingFundPayment, type WeeklySinkingFundSummary } from '../services/sinkingFundService';
 import { formatCentavos, parsePesoAmount } from '../utils/money';
 
 function shiftWeek(weekStart: string, amount: number): string {
@@ -24,6 +26,7 @@ function displayWeek(weekStart: string): string {
 
 export function SinkingFundScreen() {
   const db = useSQLiteContext();
+  const { showToast } = useToast();
   const [weekStart, setWeekStart] = useState(currentSinkingFundWeek());
   const [summary, setSummary] = useState<WeeklySinkingFundSummary | null>(null);
   const [payments, setPayments] = useState<WeeklySinkingFundPayment[]>([]);
@@ -38,6 +41,8 @@ export function SinkingFundScreen() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<WeeklySinkingFundPayment | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const selectedMember = summary?.memberRows.find(row => row.memberId === memberId) ?? null;
   const refresh = useCallback(async () => {
@@ -69,11 +74,31 @@ export function SinkingFundScreen() {
     setSaving(true);
     try {
       await recordSinkingFundPayment(db, { memberId: selectedMember.memberId, weekStart, amountCentavos, paidOn, notes });
+      const memberLabel = `Member ${selectedMember.memberCode}`;
       setFormVisible(false);
       await refresh();
+      showToast(`Sinking Fund collection for ${memberLabel} recorded successfully.`, 'success');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to record this collection.');
     } finally { setSaving(false); }
+  };
+
+  const handleDeleteCollection = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setError('');
+    try {
+      const memberLabel = `Member ${deleteTarget.memberCode}`;
+      await deleteSinkingFundPayment(db, deleteTarget.id);
+      setDeleteTarget(null);
+      await refresh();
+      showToast(`Sinking Fund collection for ${memberLabel} deleted.`, 'error');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to delete this collection.');
+      showToast(cause instanceof Error ? cause.message : 'Unable to delete this collection.', 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const progress = summary && summary.targetCentavos > 0 ? Math.min(100, (summary.collectedCentavos / summary.targetCentavos) * 100) : 0;
@@ -121,9 +146,11 @@ export function SinkingFundScreen() {
       <SectionCard title={`Recent Sinking Fund collections · ${payments.length}`} subtitle="Latest weekly contributions on this device.">
         {payments.length ? payments.map(payment => (
           <View key={payment.id} style={styles.paymentRow}>
-            <View style={styles.paymentHeader}><Text style={styles.memberTitle}>Member {payment.memberCode}</Text><Text style={styles.paymentAmount}>{formatCentavos(payment.amountCentavos)}</Text></View>
-            <Text style={styles.statusMeta}>{payment.memberName || 'Name not provided'} · {payment.paidOn}</Text>
+            <View style={styles.paymentHeader}><View style={styles.paymentIdentity}><Text style={styles.memberTitle}>Member {payment.memberCode}</Text><Text style={styles.statusMeta}>{payment.memberName || 'Name not provided'} · {payment.paidOn}</Text></View><Text style={styles.paymentAmount}>{formatCentavos(payment.amountCentavos)}</Text></View>
             {payment.notes ? <Text style={styles.statusMeta}>{payment.notes}</Text> : null}
+            <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(payment)}>
+              <Text style={styles.deleteButtonText}>Delete collection</Text>
+            </Pressable>
           </View>
         )) : <Text style={styles.empty}>No Sinking Fund collections recorded yet.</Text>}
       </SectionCard>
@@ -153,6 +180,10 @@ export function SinkingFundScreen() {
         <Field label="Notes (optional)" value={notes} onChangeText={setNotes} placeholder="Optional collection note" />
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </AppModal>
+
+      <ConfirmModal visible={Boolean(deleteTarget)} title="Delete Sinking Fund collection?"
+        message={deleteTarget ? `Permanently delete the ${formatCentavos(deleteTarget.amountCentavos)} collection from Member ${deleteTarget.memberCode} dated ${deleteTarget.paidOn}? Any weekly/advance allocation and the linked Fund contribution will also be removed. This cannot be undone.` : ''}
+        confirmLabel="Delete collection" onConfirm={() => void handleDeleteCollection()} onCancel={() => setDeleteTarget(null)} busy={deleting} destructive />
     </ScreenLayout>
   );
 }
@@ -196,6 +227,9 @@ const styles = StyleSheet.create({
   paymentRow: { borderTopWidth: 1, borderTopColor: theme.colors.border, paddingVertical: 11, gap: 3 },
   paymentHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   paymentAmount: { color: theme.colors.primary, fontSize: 13, fontWeight: '900' },
+  paymentIdentity: { flex: 1, gap: 2 },
+  deleteButton: { alignSelf: 'flex-start', marginTop: 7, borderRadius: 9, backgroundColor: '#FCE8E6', paddingHorizontal: 11, paddingVertical: 8 },
+  deleteButtonText: { color: '#B42318', fontSize: 10, fontWeight: '800' },
   error: { color: '#B42318', fontSize: 12, lineHeight: 18 },
   empty: { color: theme.colors.muted, fontSize: 13, lineHeight: 19 },
   primaryButton: { minHeight: 46, borderRadius: 12, backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
