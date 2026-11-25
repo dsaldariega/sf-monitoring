@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { AppModal, ModalActions } from '../components/AppModal';
 import { useFocusEffect } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
 import { ScreenLayout } from "../components/ScreenLayout";
@@ -39,6 +40,7 @@ export function ReportsScreen() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
   const latestPeriod = currentPeriodMonth();
 
   const selectedReport =
@@ -101,10 +103,7 @@ export function ReportsScreen() {
     setError("");
     try {
       await exportMonthlyReportCsv(db, period);
-      Alert.alert(
-        "Report exported",
-        "The CSV report was prepared in the Android share sheet.",
-      );
+      setExportModalVisible(false);
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -264,7 +263,7 @@ export function ReportsScreen() {
             <Pressable
               style={[styles.secondaryButton, exporting && styles.disabled]}
               disabled={exporting}
-              onPress={() => void handleExportCsv()}
+              onPress={() => setExportModalVisible(true)}
             >
               <Text style={styles.secondaryButtonText}>
                 {exporting ? "Exporting…" : "Export this month as CSV"}
@@ -358,6 +357,20 @@ export function ReportsScreen() {
         )}
       </SectionCard>
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      <AppModal
+        visible={exportModalVisible}
+        title="Export this month as CSV?"
+        subtitle={displayMonth(period)}
+        onClose={() => { if (!exporting) setExportModalVisible(false); }}
+        footer={<ModalActions primaryLabel="Export CSV" onPrimary={() => void handleExportCsv()} onSecondary={() => setExportModalVisible(false)} busy={exporting} />}
+      >
+        <Text style={styles.exportMessage}>
+          This will export the selected month's loan collection report as a CSV file. The export includes loan summary figures and per-loan collection details. The file will be prepared for sharing after you confirm.
+        </Text>
+        <Text style={styles.exportHint}>
+          Review the selected month before continuing.
+        </Text>
+      </AppModal>
     </ScreenLayout>
   );
 }
