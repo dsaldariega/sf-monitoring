@@ -251,7 +251,7 @@ export function LoansScreen() {
           label="Loan alias (optional)"
           value={alias}
           onChangeText={setAlias}
-          placeholder="e.g. Emergency loan"
+          placeholder="e.g. A1"
         />
         <Field
           label="Loan amount (PHP)"
