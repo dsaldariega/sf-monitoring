@@ -3,18 +3,21 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { initializeDatabase } from './src/database/database';
+import { ToastProvider } from './src/components/ToastProvider';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SQLiteProvider
+      <ToastProvider>
+        <SQLiteProvider
         databaseName="sinking-fund-monitor.db"
         onInit={initializeDatabase}
       >
         <NavigationContainer>
           <RootNavigator />
         </NavigationContainer>
-      </SQLiteProvider>
+        </SQLiteProvider>
+      </ToastProvider>
     </SafeAreaProvider>
   );
 }
