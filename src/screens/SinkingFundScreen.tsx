@@ -79,7 +79,9 @@ export function SinkingFundScreen() {
       await refresh();
       showToast(`Sinking Fund collection for ${memberLabel} recorded successfully.`, 'success');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to record this collection.');
+      const message = cause instanceof Error ? cause.message : 'Unable to record this collection.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setSaving(false); }
   };
 
