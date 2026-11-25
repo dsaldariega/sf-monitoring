@@ -17,7 +17,6 @@ import { listActiveMembers } from "../services/memberService";
 import {
   archiveLoan,
   restoreLoan,
-  deleteLoanForTesting,
   assessOverdueInstallments,
   buildInstallmentSchedule,
   calculateLoanTerms,
@@ -164,36 +163,6 @@ export function LoansScreen() {
     );
   };
 
-  const handleDeleteLoanForTesting = (loan: LoanListItem) => {
-    Alert.alert(
-      "Delete loan permanently?",
-      "TESTER ONLY: this permanently removes the loan, its installments, payments, fund links, and non-finalized audit history. This control must be removed before the custodian release.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete permanently",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteLoanForTesting(db, loan.id);
-              await refreshData();
-              Alert.alert(
-                "Loan deleted",
-                "The tester loan and its dependent test records were removed.",
-              );
-            } catch (cause) {
-              setError(
-                cause instanceof Error
-                  ? cause.message
-                  : "Unable to delete this loan.",
-              );
-            }
-          },
-        },
-      ],
-    );
-  };
-
   const handleRestoreLoan = async (loan: LoanListItem) => {
     try {
       await restoreLoan(db, loan.id);
@@ -236,11 +205,6 @@ export function LoansScreen() {
                   ? `${selectedMember.member_code} · ${selectedMember.full_name}`
                   : "Select a member"}
               </Text>
-              {selectedMember?.reference_note ? (
-                <Text style={styles.dropdownHint}>
-                  {selectedMember.reference_note}
-                </Text>
-              ) : null}
             </View>
             <Text style={styles.chevron}>
               {memberPickerVisible ? "⌃" : "⌄"}
@@ -250,7 +214,11 @@ export function LoansScreen() {
 
         {memberPickerVisible && members.length > 0 ? (
           <View style={styles.memberDropdown}>
-            <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            <ScrollView
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={members.length > 6}
+            >
               {members.map((member) => (
                 <Pressable
                   key={member.id}
@@ -266,14 +234,13 @@ export function LoansScreen() {
                   <Text style={styles.memberOptionCode}>
                     {member.member_code}
                   </Text>
-                  <Text style={styles.memberOptionName}>
+                  <Text
+                    style={styles.memberOptionName}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {member.full_name}
                   </Text>
-                  {member.reference_note ? (
-                    <Text style={styles.dropdownHint}>
-                      {member.reference_note}
-                    </Text>
-                  ) : null}
                 </Pressable>
               ))}
             </ScrollView>
@@ -478,14 +445,6 @@ export function LoansScreen() {
                 >
                   <Text style={styles.restoreButtonText}>
                     Restore to portfolio
-                  </Text>
-                </Pressable>
-                <Pressable
-                  style={styles.deleteButton}
-                  onPress={() => handleDeleteLoanForTesting(loan)}
-                >
-                  <Text style={styles.deleteButtonText}>
-                    Delete permanently · TESTER
                   </Text>
                 </Pressable>
               </View>
@@ -700,30 +659,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: 12,
-    padding: 6,
-    maxHeight: 220,
+    maxHeight: 240,
     backgroundColor: theme.colors.surface,
+    overflow: "hidden",
   },
   memberOption: {
-    padding: 13,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: 8,
-    gap: 3,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   memberOptionSelected: {
     backgroundColor: theme.colors.accent,
-    borderColor: theme.colors.primary,
   },
   memberOptionCode: {
     color: theme.colors.primary,
     fontSize: 11,
     fontWeight: "800",
+    minWidth: 52,
   },
   memberOptionName: {
     color: theme.colors.text,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
+    flex: 1,
   },
 });

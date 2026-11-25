@@ -50,5 +50,4 @@ An offline-first Android application for monthly Sinking Fund loan monitoring, c
 
 ## Status
 
-Project repository initialized. Phase 1 is next.
-\n\n## Tester-only controls\n\nThe `dev` branch currently includes a clearly labeled permanent loan deletion control for test data cleanup. It must be removed before the custodian release; production financial records should use archive/restore instead.\n
+Phases 1-9 are implemented and verified on the `dev` branch. The current work is release hardening, final documentation, and APK testing before the custodian handoff.
