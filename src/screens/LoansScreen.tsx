@@ -17,6 +17,7 @@ import { listActiveMembers } from "../services/memberService";
 import {
   archiveLoan,
   restoreLoan,
+  deleteLoanForTesting,
   assessOverdueInstallments,
   buildInstallmentSchedule,
   calculateLoanTerms,
@@ -477,6 +478,14 @@ export function LoansScreen() {
                 >
                   <Text style={styles.restoreButtonText}>
                     Restore to portfolio
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteLoanForTesting(loan)}
+                >
+                  <Text style={styles.deleteButtonText}>
+                    Delete permanently · TESTER
                   </Text>
                 </Pressable>
               </View>
