@@ -219,3 +219,31 @@ export async function finalizeMonthlyReport(
   });
   return reportId;
 }
+
+
+export async function deleteMonthlyReport(
+  db: SQLiteDatabase,
+  reportId: number
+): Promise<void> {
+  if (!Number.isSafeInteger(reportId) || reportId <= 0) {
+    throw new Error('Select a valid monthly report.');
+  }
+
+  await db.withTransactionAsync(async () => {
+    const report = await db.getFirstAsync<{ id: number; period_month: string }>(
+      'SELECT id, period_month FROM monthly_reports WHERE id = ?',
+      reportId
+    );
+    if (!report) throw new Error('The finalized monthly report was not found.');
+
+    await db.runAsync('DELETE FROM monthly_reports WHERE id = ?', reportId);
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('deleted', 'monthly_report', NULL, ?)`,
+      JSON.stringify({
+        deletedReportId: reportId,
+        periodMonth: report.period_month,
+      })
+    );
+  });
+}

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { AppModal, ModalActions } from '../components/AppModal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { DatePickerField } from '../components/DatePickerField';
 import { MetricCard } from '../components/MetricCard';
 import { ScreenLayout } from '../components/ScreenLayout';
@@ -10,7 +11,7 @@ import { SectionCard } from '../components/SectionCard';
 import { theme } from '../constants/theme';
 import { useToast } from '../components/ToastProvider';
 import type { FundTransactionRecord } from '../database/database.types';
-import { addManualFundTransaction, getFundSummary, listFundTransactions, type FundSummary, type ManualFundTransactionType } from '../services/fundService';
+import { addManualFundTransaction, deleteManualFundTransaction, getFundSummary, listFundTransactions, type FundSummary, type ManualFundTransactionType } from '../services/fundService';
 import { formatCentavos, parsePesoAmount } from '../utils/money';
 
 const now = new Date();
@@ -47,6 +48,8 @@ export function FundScreen() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<FundTransactionRecord | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -85,6 +88,25 @@ export function FundScreen() {
     } finally { setSaving(false); }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setError('');
+    try {
+      const label = transactionLabel(deleteTarget.transaction_type);
+      await deleteManualFundTransaction(db, deleteTarget.id);
+      setDeleteTarget(null);
+      await refresh();
+      showToast(`${label} deleted successfully.`, 'destructive');
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Unable to delete this Fund record.';
+      setError(message);
+      showToast(message, 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <ScreenLayout title="Fund" description="Track the available Sinking Fund balance and every recorded movement of money.">
       <View style={styles.metrics}>
@@ -110,6 +132,11 @@ export function FundScreen() {
             </View>
             <Text style={styles.meta}>{item.transaction_date}{item.reference_type ? ` · Ref: ${item.reference_type} #${item.reference_id}` : ''}</Text>
             {item.notes ? <Text style={styles.meta}>{item.notes}</Text> : null}
+            {item.reference_type === null && ['initial_fund', 'other_in', 'other_out'].includes(item.transaction_type) ? (
+              <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(item)}>
+                <Text style={styles.deleteButtonText}>Delete Fund record</Text>
+              </Pressable>
+            ) : null}
           </View>
         ))}
       </SectionCard>
@@ -138,6 +165,17 @@ export function FundScreen() {
         <Field label="Description / notes (optional)" value={notes} onChangeText={setNotes} placeholder="Optional Fund note" />
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </AppModal>
+
+      <ConfirmModal
+        visible={Boolean(deleteTarget)}
+        title="Delete Fund record?"
+        message={deleteTarget ? `Permanently delete this ${transactionLabel(deleteTarget.transaction_type).toLowerCase()} of ${formatCentavos(deleteTarget.amount_centavos)} dated ${deleteTarget.transaction_date}? Only manual Fund records can be deleted here. Automatic Sinking Fund and loan transactions remain linked to their source records. This cannot be undone.` : ''}
+        confirmLabel="Delete Fund record"
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setDeleteTarget(null)}
+        busy={deleting}
+        destructive
+      />
     </ScreenLayout>
   );
 }
@@ -172,4 +210,6 @@ const styles = StyleSheet.create({
   inflow: { color: theme.colors.primary },
   outflow: { color: '#B42318' },
   meta: { color: theme.colors.muted, fontSize: 10, lineHeight: 15 },
+  deleteButton: { alignSelf: 'flex-start', marginTop: 7, borderRadius: 9, backgroundColor: '#FCE8E6', paddingHorizontal: 11, paddingVertical: 8 },
+  deleteButtonText: { color: '#B42318', fontSize: 10, fontWeight: '800' },
 });

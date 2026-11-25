@@ -122,7 +122,7 @@ const message = cause instanceof Error ? cause.message : 'Unable to delete this 
         <Pressable style={styles.primaryButton} onPress={openCreateModal} disabled={members.length === 0}>
           <Text style={styles.primaryButtonText}>+ Register loan</Text>
         </Pressable>
-        {members.length === 0 ? <Text style={styles.empty}>Add a member first before registering a loan.</Text> : null}
+        {members.length === 0 ? <Text style={styles.empty}>No members yet. Add a member first before registering a loan.</Text> : null}
       </SectionCard>
 
       <SectionCard title={`Loan portfolio · ${activeLoans.length}`} subtitle="Active and paid loans currently in the portfolio.">

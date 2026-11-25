@@ -45,6 +45,14 @@ export async function createMember(
     throw new Error('Heads must be a whole number from 1 to 999.');
   }
 
+  const existingMember = await db.getFirstAsync<{ id: number }>(
+    'SELECT id FROM members WHERE member_code = ? LIMIT 1',
+    memberCode,
+  );
+  if (existingMember) {
+    throw new Error(`Member ${memberCode} already exists. Use a different member ID.`);
+  }
+
   let memberId = 0;
   await db.withTransactionAsync(async () => {
     const result = await db.runAsync(

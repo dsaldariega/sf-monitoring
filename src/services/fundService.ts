@@ -111,3 +111,41 @@ export async function addManualFundTransaction(
   });
   return transactionId;
 }
+
+
+export async function deleteManualFundTransaction(
+  db: SQLiteDatabase,
+  transactionId: number
+): Promise<void> {
+  if (!Number.isSafeInteger(transactionId) || transactionId <= 0) {
+    throw new Error('Select a valid Fund record.');
+  }
+
+  await db.withTransactionAsync(async () => {
+    const transaction = await db.getFirstAsync<{
+      id: number;
+      transaction_type: FundTransactionRecord['transaction_type'];
+      amount_centavos: number;
+      reference_type: string | null;
+    }>(
+      'SELECT id, transaction_type, amount_centavos, reference_type FROM fund_transactions WHERE id = ?',
+      transactionId
+    );
+
+    if (!transaction) throw new Error('Fund record was not found.');
+    if (transaction.reference_type !== null || !['initial_fund', 'other_in', 'other_out'].includes(transaction.transaction_type)) {
+      throw new Error('Automatic Fund transactions must be removed from their source record.');
+    }
+
+    await db.runAsync('DELETE FROM fund_transactions WHERE id = ?', transactionId);
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('deleted', 'fund_transaction', NULL, ?)`,
+      JSON.stringify({
+        deletedTransactionId: transactionId,
+        transactionType: transaction.transaction_type,
+        amountCentavos: transaction.amount_centavos,
+      })
+    );
+  });
+}

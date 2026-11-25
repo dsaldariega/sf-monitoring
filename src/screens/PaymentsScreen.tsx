@@ -72,7 +72,7 @@ const message = cause instanceof Error ? cause.message : 'Unable to record this 
         <Pressable style={styles.primaryButton} onPress={openPaymentModal} disabled={loans.length === 0}>
           <Text style={styles.primaryButtonText}>+ Record payment</Text>
         </Pressable>
-        {loans.length === 0 ? <Text style={styles.empty}>There are no active loans with an outstanding balance.</Text> : null}
+        {loans.length === 0 ? <Text style={styles.empty}>No active loans yet. Add a member and register a loan first.</Text> : null}
       </SectionCard>
 
       <SectionCard title={`Recent payments · ${history.length}`} subtitle="The latest 50 recorded loan collections on this device.">
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   totalValue: { color: theme.colors.primary, fontSize: 14, fontWeight: '900' },
   penaltyValue: { color: '#B42318', fontSize: 12, fontWeight: '800' },
   error: { color: '#B42318', fontSize: 12, lineHeight: 18 },
-  empty: { color: theme.colors.muted, fontSize: 13, lineHeight: 18 },
+  empty: { color: theme.colors.muted, fontSize: 13, lineHeight: 18, fontWeight: '700' },
   primaryButton: { minHeight: 46, borderRadius: 12, backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   historyRow: { borderTopWidth: 1, borderTopColor: theme.colors.border, paddingVertical: 12, gap: 4 },

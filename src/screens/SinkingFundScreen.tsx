@@ -127,6 +127,7 @@ export function SinkingFundScreen() {
         <Pressable style={styles.primaryButton} onPress={openCollectionModal} disabled={!summary?.memberRows.length}>
           <Text style={styles.primaryButtonText}>+ Record weekly collection</Text>
         </Pressable>
+        {!summary?.memberRows.length ? <Text style={styles.empty}>No members yet. Add a member first before recording a weekly collection.</Text> : null}
       </SectionCard>
 
       <SectionCard title={`Member weekly status · ${summary?.memberRows.length ?? 0}`} subtitle="A member may be fully covered, partially paid, or ahead through advance payment.">
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
   deleteButton: { alignSelf: 'flex-start', marginTop: 7, borderRadius: 9, backgroundColor: '#FCE8E6', paddingHorizontal: 11, paddingVertical: 8 },
   deleteButtonText: { color: '#B42318', fontSize: 10, fontWeight: '800' },
   error: { color: '#B42318', fontSize: 12, lineHeight: 18 },
-  empty: { color: theme.colors.muted, fontSize: 13, lineHeight: 19 },
+  empty: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, fontWeight: '700' },
   primaryButton: { minHeight: 46, borderRadius: 12, backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   disabled: { opacity: 0.5 },

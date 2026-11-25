@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppModal, ModalActions } from "../components/AppModal";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
 import { ScreenLayout } from "../components/ScreenLayout";
@@ -11,6 +12,7 @@ import { exportMonthlyReportCsv } from "../services/backupService";
 import {
   currentPeriodMonth,
   finalizeMonthlyReport,
+  deleteMonthlyReport,
   getMonthlySummary,
   listMonthlyReports,
   type MonthlyReportRecord,
@@ -43,6 +45,8 @@ export function ReportsScreen() {
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MonthlyReportRecord | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const latestPeriod = currentPeriodMonth();
 
   const selectedReport =
@@ -116,35 +120,40 @@ export function ReportsScreen() {
     }
   };
 
-  const handleFinalize = () => {
-    Alert.alert(
-      "Finalize monthly report?",
-      `The ${displayMonth(period)} report will be saved as a permanent snapshot. It cannot be overwritten.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Finalize report",
-          onPress: async () => {
-            setBusy(true);
-            try {
-              await finalizeMonthlyReport(db, period);
-              setSelectedReportId(null);
-              await refresh();
-              showToast(`${displayMonth(period)} loan report finalized successfully.`, 'success');
-            } catch (cause) {
-              const message =
-                cause instanceof Error
-                  ? cause.message
-                  : "Unable to finalize this report.";
-              setError(message);
-              showToast(message, 'error');
-            } finally {
-              setBusy(false);
-            }
-          },
-        },
-      ],
-    );
+  const handleFinalize = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await finalizeMonthlyReport(db, period);
+      setSelectedReportId(null);
+      await refresh();
+      showToast(`${displayMonth(period)} loan report finalized successfully.`, 'success');
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Unable to finalize this report.";
+      setError(message);
+      showToast(message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeleteReport = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await deleteMonthlyReport(db, deleteTarget.id);
+      setDeleteTarget(null);
+      setSelectedReportId(null);
+      await refresh();
+      showToast(`${displayMonth(deleteTarget.period_month)} loan report deleted.`, 'destructive');
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Unable to delete this report.";
+      setError(message);
+      showToast(message, 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const snapshot = useMemo(() => {
@@ -279,7 +288,7 @@ export function ReportsScreen() {
                   (!canFinalize || busy) && styles.disabled,
                 ]}
                 disabled={!canFinalize || busy}
-                onPress={handleFinalize}
+                onPress={() => void handleFinalize()}
               >
                 <Text style={styles.primaryButtonText}>
                   {busy
@@ -327,6 +336,11 @@ export function ReportsScreen() {
               <Text style={styles.loanMeta}>
                 Finalized {report.finalized_at}
               </Text>
+              {report.id === selectedReportId ? (
+                <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(report)}>
+                  <Text style={styles.deleteButtonText}>Delete finalized report</Text>
+                </Pressable>
+              ) : null}
               {report.id === selectedReportId && snapshot ? (
                 <View style={styles.snapshot}>
                   <Text style={styles.metricLabel}>
@@ -381,6 +395,17 @@ export function ReportsScreen() {
           Review the selected month before continuing.
         </Text>
       </AppModal>
+
+      <ConfirmModal
+        visible={Boolean(deleteTarget)}
+        title="Delete finalized report?"
+        message={deleteTarget ? `Permanently delete the ${displayMonth(deleteTarget.period_month)} finalized loan report snapshot? This removes the saved historical snapshot only and does not delete or change the underlying loans or payments. This cannot be undone.` : ''}
+        confirmLabel="Delete report"
+        onConfirm={() => void handleDeleteReport()}
+        onCancel={() => setDeleteTarget(null)}
+        busy={deleting}
+        destructive
+      />
     </ScreenLayout>
   );
 }
@@ -415,7 +440,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 5,
   },
-  empty: { color: theme.colors.muted, fontSize: 12, lineHeight: 18 },
+  empty: { color: theme.colors.muted, fontSize: 12, lineHeight: 18, fontWeight: '700' },
   loanLine: {
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
