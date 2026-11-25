@@ -35,6 +35,14 @@ function transactionLabel(type: FundTransactionRecord['transaction_type']): stri
 function isInflow(type: FundTransactionRecord['transaction_type']): boolean {
   return ['initial_fund', 'contribution', 'loan_collection', 'other_in'].includes(type);
 }
+function sourceLabel(type: FundTransactionRecord['transaction_type']): string {
+  switch (type) {
+    case 'contribution': return 'Sinking Fund';
+    case 'loan_release': return 'Loans';
+    case 'loan_collection': return 'Payments';
+    default: return 'Fund';
+  }
+}
 
 export function FundScreen() {
   const db = useSQLiteContext();
@@ -49,6 +57,7 @@ export function FundScreen() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FundTransactionRecord | null>(null);
+  const [expandedTransactionId, setExpandedTransactionId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -122,27 +131,42 @@ export function FundScreen() {
       </SectionCard>
 
       <SectionCard title={`Fund ledger · ${transactions.length}`} subtitle="Latest 100 transactions. Automatic loan and Sinking Fund activity remains linked to its source record.">
-        {transactions.length === 0 ? <Text style={styles.empty}>No Fund transactions recorded yet.</Text> : transactions.map(item => (
-          <View key={item.id} style={styles.transactionRow}>
-            <View style={styles.transactionHeader}>
-              <Text style={styles.transactionTitle}>{transactionLabel(item.transaction_type)}</Text>
-              <Text style={[styles.transactionAmount, isInflow(item.transaction_type) ? styles.inflow : styles.outflow]}>
-                {isInflow(item.transaction_type) ? '+' : '−'}{formatCentavos(item.amount_centavos)}
-              </Text>
-            </View>
-            <Text style={styles.meta}>{item.transaction_date}{item.reference_type ? ` · Ref: ${item.reference_type} #${item.reference_id}` : ''}</Text>
-            {item.notes ? <Text style={styles.meta}>{item.notes}</Text> : null}
-            {item.reference_type === null && ['initial_fund', 'other_in', 'other_out'].includes(item.transaction_type) ? (
-              <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(item)}>
-                <Text style={styles.deleteButtonText}>Delete Fund record</Text>
+        {transactions.length === 0 ? <Text style={styles.empty}>No Fund transactions recorded yet.</Text> : transactions.map(item => {
+          const isExpanded = item.id === expandedTransactionId;
+          const isManual = item.reference_type === null && ['initial_fund', 'other_in', 'other_out'].includes(item.transaction_type);
+          return (
+            <View key={item.id} style={[styles.transactionRow, isExpanded && styles.expandedRow]}>
+              <Pressable style={styles.transactionDetails} onPress={() => setExpandedTransactionId(current => current === item.id ? null : item.id)}>
+                <View style={styles.transactionHeader}>
+                  <Text style={styles.transactionTitle}>{transactionLabel(item.transaction_type)}</Text>
+                  <Text style={[styles.transactionAmount, isInflow(item.transaction_type) ? styles.inflow : styles.outflow]}>
+                    {isInflow(item.transaction_type) ? '+' : '−'}{formatCentavos(item.amount_centavos)}
+                  </Text>
+                </View>
+                <Text style={styles.meta}>{item.transaction_date}</Text>
+                {isExpanded ? (
+                  <>
+                    {item.reference_type ? <Text style={styles.meta}>Reference: {item.reference_type} #{item.reference_id}</Text> : null}
+                    {item.notes ? <Text style={styles.meta}>{item.notes}</Text> : null}
+                    {isManual ? (
+                      <Text style={styles.meta}>Manually added to Fund.</Text>
+                    ) : (
+                      <Text style={styles.linkedRecord}>
+                        Automatically recorded from {sourceLabel(item.transaction_type)}. Manage this record from {sourceLabel(item.transaction_type)}.
+                      </Text>
+                    )}
+                  </>
+                ) : null}
+                <Text style={styles.expandHint}>{isExpanded ? 'Tap to collapse' : 'Tap to view actions'}</Text>
               </Pressable>
-            ) : (
-              <Text style={styles.linkedRecord}>
-                Linked record — delete it from its source screen.
-              </Text>
-            )}
-          </View>
-        ))}
+              {isExpanded && isManual ? (
+                <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(item)}>
+                  <Text style={styles.deleteButtonText}>Delete Fund record</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          );
+        })}
       </SectionCard>
 
       <AppModal visible={formVisible} title="Fund" subtitle="Add a manual Sinking Fund ledger movement."
@@ -207,6 +231,8 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   disabled: { opacity: 0.45 },
   empty: { color: theme.colors.muted, fontSize: 13, lineHeight: 19 },
+  transactionDetails: { flex: 1, gap: 4 },
+  expandedRow: { backgroundColor: theme.colors.accent, paddingHorizontal: 8, borderRadius: 10 },
   transactionRow: { borderTopWidth: 1, borderTopColor: theme.colors.border, paddingVertical: 11, gap: 4 },
   transactionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   transactionTitle: { color: theme.colors.text, fontSize: 12, fontWeight: '800', flex: 1 },
@@ -216,5 +242,6 @@ const styles = StyleSheet.create({
   meta: { color: theme.colors.muted, fontSize: 10, lineHeight: 15 },
   deleteButton: { alignSelf: 'flex-start', marginTop: 7, borderRadius: 9, backgroundColor: '#FCE8E6', paddingHorizontal: 11, paddingVertical: 8 },
   deleteButtonText: { color: '#B42318', fontSize: 10, fontWeight: '800' },
-  linkedRecord: { color: theme.colors.muted, fontSize: 10, fontWeight: '700', lineHeight: 15, marginTop: 7 },
+  linkedRecord: { color: theme.colors.muted, fontSize: 10, fontWeight: '700', lineHeight: 15, marginTop: 4 },
+  expandHint: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 2 },
 });

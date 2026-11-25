@@ -17,6 +17,7 @@ export function MembersScreen() {
   const [members, setMembers] = useState<MemberRecord[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MemberRecord | null>(null);
+  const [expandedMemberId, setExpandedMemberId] = useState<number | null>(null);
   const [memberCode, setMemberCode] = useState('');
   const [fullName, setFullName] = useState('');
   const [heads, setHeads] = useState('1');
@@ -81,19 +82,25 @@ const message = cause instanceof Error ? cause.message : 'Unable to delete this 
       </SectionCard>
 
       <SectionCard title={`Member records · ${members.length}`} subtitle="Use Delete only for a member that has no financial history.">
-        {members.length === 0 ? <Text style={styles.empty}>No members registered yet.</Text> : members.map(member => (
-          <View key={member.id} style={styles.memberRow}>
-            <View style={styles.memberInfo}>
-              <Text style={styles.memberCode}>Member {member.member_code}</Text>
-              <Text style={styles.memberName}>{member.full_name.trim() || 'Name not provided'}</Text>
-              <Text style={styles.meta}>{member.heads} heads · PHP {(member.heads * 50).toLocaleString('en-PH')}/week</Text>
-              {member.contact_number ? <Text style={styles.meta}>{member.contact_number}</Text> : null}
+        {members.length === 0 ? <Text style={styles.empty}>No members registered yet.</Text> : members.map(member => {
+          const isExpanded = member.id === expandedMemberId;
+          return (
+            <View key={member.id} style={[styles.memberRow, isExpanded && styles.expandedRow]}>
+              <Pressable style={styles.memberInfo} onPress={() => setExpandedMemberId(current => current === member.id ? null : member.id)}>
+                <Text style={styles.memberCode}>Member {member.member_code}</Text>
+                <Text style={styles.memberName}>{member.full_name.trim() || 'Name not provided'}</Text>
+                <Text style={styles.meta}>{member.heads} heads · PHP {(member.heads * 50).toLocaleString('en-PH')}/week</Text>
+                {isExpanded && member.contact_number ? <Text style={styles.meta}>{member.contact_number}</Text> : null}
+                <Text style={styles.expandHint}>{isExpanded ? 'Tap to collapse' : 'Tap to view actions'}</Text>
+              </Pressable>
+              {isExpanded ? (
+                <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(member)}>
+                  <Text style={styles.deleteButtonText}>Delete member</Text>
+                </Pressable>
+              ) : null}
             </View>
-            <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(member)}>
-              <Text style={styles.deleteButtonText}>Delete</Text>
-            </Pressable>
-          </View>
-        ))}
+          );
+        })
       </SectionCard>
 
       <AppModal visible={modalVisible} title="Add member" subtitle="Create a new member record on this device."
@@ -135,7 +142,9 @@ const styles = StyleSheet.create({
   empty: { color: theme.colors.muted, fontSize: 13 },
   memberRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: theme.colors.border },
   memberInfo: { flex: 1, gap: 3 },
+  expandedRow: { backgroundColor: theme.colors.accent, paddingHorizontal: 8, borderRadius: 10 },
   memberCode: { color: theme.colors.primary, fontSize: 11, fontWeight: '800' },
   memberName: { color: theme.colors.text, fontSize: 14, fontWeight: '700' },
   meta: { color: theme.colors.muted, fontSize: 11 },
+  expandHint: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 3 },
 });

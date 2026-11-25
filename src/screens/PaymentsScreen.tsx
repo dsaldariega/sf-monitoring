@@ -46,6 +46,7 @@ export function PaymentsScreen() {
   const [deleteTarget, setDeleteTarget] = useState<PaymentHistoryItem | null>(
     null,
   );
+  const [expandedPaymentId, setExpandedPaymentId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const selectedLoan = loans.find((loan) => loan.id === loanId) ?? null;
@@ -175,36 +176,41 @@ export function PaymentsScreen() {
         {history.length === 0 ? (
           <Text style={styles.empty}>No payments recorded yet.</Text>
         ) : (
-          history.map((payment) => (
-            <View key={payment.id} style={styles.historyRow}>
-              <View style={styles.historyHeader}>
-                <Text style={styles.optionTitle}>
-                  Member {payment.member_code} · {payment.alias || "No alias"}
-                </Text>
-                <Text style={styles.historyAmount}>
-                  {formatCentavos(payment.amount_centavos)}
-                </Text>
+          history.map((payment) => {
+            const isExpanded = payment.id === expandedPaymentId;
+            return (
+              <View key={payment.id} style={[styles.historyRow, isExpanded && styles.expandedRow]}>
+                <Pressable style={styles.historyDetails} onPress={() => setExpandedPaymentId(current => current === payment.id ? null : payment.id)}>
+                  <View style={styles.historyHeader}>
+                    <Text style={styles.optionTitle}>
+                      Member {payment.member_code} · {payment.alias || "No alias"}
+                    </Text>
+                    <Text style={styles.historyAmount}>
+                      {formatCentavos(payment.amount_centavos)}
+                    </Text>
+                  </View>
+                  <Text style={styles.dropdownHint}>
+                    {payment.member_name || "Name not provided"} · {payment.paid_on}
+                  </Text>
+                  {isExpanded && payment.penalty_allocated_centavos > 0 ? (
+                    <Text style={styles.penaltyNote}>
+                      Includes {formatCentavos(payment.penalty_allocated_centavos)}{" "}
+                      penalty settlement
+                    </Text>
+                  ) : null}
+                  {isExpanded && payment.notes ? (
+                    <Text style={styles.dropdownHint}>{payment.notes}</Text>
+                  ) : null}
+                  <Text style={styles.expandHint}>{isExpanded ? "Tap to collapse" : "Tap to view actions"}</Text>
+                </Pressable>
+                {isExpanded ? (
+                  <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(payment)}>
+                    <Text style={styles.deleteButtonText}>Delete payment</Text>
+                  </Pressable>
+                ) : null}
               </View>
-              <Text style={styles.dropdownHint}>
-                {payment.member_name || "Name not provided"} · {payment.paid_on}
-              </Text>
-              {payment.penalty_allocated_centavos > 0 ? (
-                <Text style={styles.penaltyNote}>
-                  Includes {formatCentavos(payment.penalty_allocated_centavos)}{" "}
-                  penalty settlement
-                </Text>
-              ) : null}
-              {payment.notes ? (
-                <Text style={styles.dropdownHint}>{payment.notes}</Text>
-              ) : null}
-              <Pressable
-                style={styles.deleteButton}
-                onPress={() => setDeleteTarget(payment)}
-              >
-                <Text style={styles.deleteButtonText}>Delete payment</Text>
-              </Pressable>
-            </View>
-          ))
+            );
+          })
         )}
       </SectionCard>
 
@@ -489,6 +495,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   primaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
+  historyDetails: { flex: 1, gap: 4 },
+  expandedRow: { backgroundColor: theme.colors.accent, paddingHorizontal: 8, borderRadius: 10 },
   historyRow: {
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
@@ -515,4 +523,5 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   penaltyNote: { color: "#B42318", fontSize: 11, fontWeight: "700" },
+  expandHint: { color: theme.colors.primary, fontSize: 10, fontWeight: "700", marginTop: 2 },
 });

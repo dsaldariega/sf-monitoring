@@ -33,6 +33,7 @@ export function LoansScreen() {
   const [formVisible, setFormVisible] = useState(false);
   const [memberPickerVisible, setMemberPickerVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LoanListItem | null>(null);
+  const [expandedLoanId, setExpandedLoanId] = useState<number | null>(null);
   const [memberId, setMemberId] = useState<number | null>(null);
   const [principal, setPrincipal] = useState('');
   const [alias, setAlias] = useState('');
@@ -126,21 +127,29 @@ const message = cause instanceof Error ? cause.message : 'Unable to delete this 
       </SectionCard>
 
       <SectionCard title={`Loan portfolio · ${activeLoans.length}`} subtitle="Active and paid loans currently in the portfolio.">
-        {activeLoans.length === 0 ? <Text style={styles.empty}>No loan records in the active portfolio.</Text> : activeLoans.map(loan => (
-          <View key={loan.id} style={styles.loanRow}>
-            <View style={styles.loanHeader}>
-              <Text style={styles.memberCode}>Member {loan.member_code}</Text>
-              <Text style={[styles.status, loan.status === 'active' && styles.activeStatus]}>{loan.status.toUpperCase()}</Text>
+        {activeLoans.length === 0 ? <Text style={styles.empty}>No loan records in the active portfolio.</Text> : activeLoans.map(loan => {
+          const isExpanded = loan.id === expandedLoanId;
+          return (
+            <View key={loan.id} style={[styles.loanRow, isExpanded && styles.expandedRow]}>
+              <Pressable style={styles.loanDetails} onPress={() => setExpandedLoanId(current => current === loan.id ? null : loan.id)}>
+                <View style={styles.loanHeader}>
+                  <Text style={styles.memberCode}>Member {loan.member_code}</Text>
+                  <Text style={[styles.status, loan.status === 'active' && styles.activeStatus]}>{loan.status.toUpperCase()}</Text>
+                </View>
+                <Text style={styles.memberName}>{loan.alias || 'No alias'}</Text>
+                {loan.alias ? <Text style={styles.meta}>{loan.member_name || 'Name not provided'}</Text> : null}
+                <Text style={styles.amount}>{formatCentavos(loan.principal_amount_centavos)}</Text>
+                <Text style={styles.meta}>5% monthly · {loan.term_months} month(s) · Starts {loan.loan_date}</Text>
+                <Text style={styles.expandHint}>{isExpanded ? 'Tap to collapse' : 'Tap to view actions'}</Text>
+              </Pressable>
+              {isExpanded ? (
+                <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(loan)}>
+                  <Text style={styles.deleteButtonText}>Delete loan</Text>
+                </Pressable>
+              ) : null}
             </View>
-            <Text style={styles.memberName}>{loan.alias || 'No alias'}</Text>
-            {loan.alias ? <Text style={styles.meta}>{loan.member_name || 'Name not provided'}</Text> : null}
-            <Text style={styles.amount}>{formatCentavos(loan.principal_amount_centavos)}</Text>
-            <Text style={styles.meta}>5% monthly · {loan.term_months} month(s) · Starts {loan.loan_date}</Text>
-            <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(loan)}>
-              <Text style={styles.deleteButtonText}>Delete loan</Text>
-            </Pressable>
-          </View>
-        ))}
+          );
+        })
       </SectionCard>
 
       <AppModal visible={formVisible} title="Register loan" subtitle="Review the loan details and calculated schedule before saving."
@@ -262,11 +271,14 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   deleteButton: { alignSelf: 'flex-start', marginTop: 5, borderRadius: 9, backgroundColor: '#FCE8E6', paddingHorizontal: 11, paddingVertical: 8 },
   deleteButtonText: { color: '#B42318', fontSize: 11, fontWeight: '800' },
+  loanDetails: { flex: 1, gap: 3 },
+  expandedRow: { backgroundColor: theme.colors.accent, paddingHorizontal: 8, borderRadius: 10 },
   loanRow: { borderTopWidth: 1, borderTopColor: theme.colors.border, paddingVertical: 12, gap: 4 },
   loanHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   memberCode: { color: theme.colors.primary, fontSize: 11, fontWeight: '900' },
   memberName: { color: theme.colors.text, fontSize: 14, fontWeight: '800' },
   meta: { color: theme.colors.muted, fontSize: 10, lineHeight: 15 },
+  expandHint: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 2 },
   amount: { color: theme.colors.text, fontSize: 15, fontWeight: '900', marginTop: 2 },
   status: { color: theme.colors.muted, fontSize: 9, fontWeight: '900' },
   activeStatus: { color: theme.colors.primary },

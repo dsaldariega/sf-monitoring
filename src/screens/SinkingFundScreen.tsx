@@ -42,6 +42,7 @@ export function SinkingFundScreen() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<WeeklySinkingFundPayment | null>(null);
+  const [expandedPaymentId, setExpandedPaymentId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const selectedMember = summary?.memberRows.find(row => row.memberId === memberId) ?? null;
@@ -147,15 +148,23 @@ export function SinkingFundScreen() {
       </SectionCard>
 
       <SectionCard title={`Recent Sinking Fund collections · ${payments.length}`} subtitle="Latest weekly contributions on this device.">
-        {payments.length ? payments.map(payment => (
-          <View key={payment.id} style={styles.paymentRow}>
-            <View style={styles.paymentHeader}><View style={styles.paymentIdentity}><Text style={styles.memberTitle}>Member {payment.memberCode}</Text><Text style={styles.statusMeta}>{payment.memberName || 'Name not provided'} · {payment.paidOn}</Text></View><Text style={styles.paymentAmount}>{formatCentavos(payment.amountCentavos)}</Text></View>
-            {payment.notes ? <Text style={styles.statusMeta}>{payment.notes}</Text> : null}
-            <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(payment)}>
-              <Text style={styles.deleteButtonText}>Delete collection</Text>
-            </Pressable>
-          </View>
-        )) : <Text style={styles.empty}>No Sinking Fund collections recorded yet.</Text>}
+        {payments.length ? payments.map(payment => {
+          const isExpanded = payment.id === expandedPaymentId;
+          return (
+            <View key={payment.id} style={[styles.paymentRow, isExpanded && styles.expandedRow]}>
+              <Pressable style={styles.paymentDetails} onPress={() => setExpandedPaymentId(current => current === payment.id ? null : payment.id)}>
+                <View style={styles.paymentHeader}><View style={styles.paymentIdentity}><Text style={styles.memberTitle}>Member {payment.memberCode}</Text><Text style={styles.statusMeta}>{payment.memberName || 'Name not provided'} · {payment.paidOn}</Text></View><Text style={styles.paymentAmount}>{formatCentavos(payment.amountCentavos)}</Text></View>
+                {isExpanded && payment.notes ? <Text style={styles.statusMeta}>{payment.notes}</Text> : null}
+                <Text style={styles.expandHint}>{isExpanded ? 'Tap to collapse' : 'Tap to view actions'}</Text>
+              </Pressable>
+              {isExpanded ? (
+                <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(payment)}>
+                  <Text style={styles.deleteButtonText}>Delete collection</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          );
+        }) : <Text style={styles.empty}>No Sinking Fund collections recorded yet.</Text>}
       </SectionCard>
 
       <AppModal visible={formVisible} title="Record weekly collection" subtitle={`Week of ${displayWeek(weekStart)} · ₱50 per head`}
@@ -227,12 +236,15 @@ const styles = StyleSheet.create({
   remainingText: { color: theme.colors.warning, fontSize: 10, fontWeight: '800' },
   paidText: { color: theme.colors.primary, fontSize: 10, fontWeight: '800' },
   advanceText: { color: theme.colors.primaryDark, fontSize: 10, fontWeight: '800' },
+  paymentDetails: { flex: 1, gap: 3 },
+  expandedRow: { backgroundColor: theme.colors.accent, paddingHorizontal: 8, borderRadius: 10 },
   paymentRow: { borderTopWidth: 1, borderTopColor: theme.colors.border, paddingVertical: 11, gap: 3 },
   paymentHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   paymentAmount: { color: theme.colors.primary, fontSize: 13, fontWeight: '900' },
   paymentIdentity: { flex: 1, gap: 2 },
   deleteButton: { alignSelf: 'flex-start', marginTop: 7, borderRadius: 9, backgroundColor: '#FCE8E6', paddingHorizontal: 11, paddingVertical: 8 },
   deleteButtonText: { color: '#B42318', fontSize: 10, fontWeight: '800' },
+  expandHint: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 2 },
   error: { color: '#B42318', fontSize: 12, lineHeight: 18 },
   empty: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, fontWeight: '700' },
   primaryButton: { minHeight: 46, borderRadius: 12, backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
