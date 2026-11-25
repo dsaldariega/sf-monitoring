@@ -147,13 +147,20 @@ export async function deleteMember(db: SQLiteDatabase, memberId: number): Promis
     const weeklyPaymentCount = await db.getFirstAsync<{ count: number }>(
       'SELECT COUNT(*) AS count FROM sinking_fund_payments WHERE member_id = ?', memberId
     );
-    const weeklyWeekCount = await db.getFirstAsync<{ count: number }>(
-      'SELECT COUNT(*) AS count FROM sinking_fund_weeks WHERE member_id = ?', memberId
+    const weeklyAllocationCount = await db.getFirstAsync<{ count: number }>(
+      `SELECT COUNT(*) AS count
+       FROM sinking_fund_allocations a
+       INNER JOIN sinking_fund_weeks w ON w.id = a.week_id
+       WHERE w.member_id = ?`,
+      memberId
     );
 
-    if ((loanCount?.count ?? 0) > 0 || (weeklyPaymentCount?.count ?? 0) > 0 || (weeklyWeekCount?.count ?? 0) > 0) {
-      throw new Error('This member has financial history. Permanent deletion is blocked to protect records. Add a new member instead.');
+    if ((loanCount?.count ?? 0) > 0 || (weeklyPaymentCount?.count ?? 0) > 0 || (weeklyAllocationCount?.count ?? 0) > 0) {
+      throw new Error('This member has financial history. Permanent deletion is blocked to protect records. Delete the related financial records first.');
     }
+
+    // Empty weekly placeholder rows are not financial history and may be safely removed.
+    await db.runAsync('DELETE FROM sinking_fund_weeks WHERE member_id = ?', memberId);
 
     await db.runAsync('DELETE FROM audit_logs WHERE entity_type = ? AND entity_id = ?', 'member', memberId);
     await db.runAsync('DELETE FROM members WHERE id = ?', memberId);
