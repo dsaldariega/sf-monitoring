@@ -8,6 +8,7 @@ import { MetricCard } from '../components/MetricCard';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { SectionCard } from '../components/SectionCard';
 import { theme } from '../constants/theme';
+import { useToast } from '../components/ToastProvider';
 import type { FundTransactionRecord } from '../database/database.types';
 import { addManualFundTransaction, getFundSummary, listFundTransactions, type FundSummary, type ManualFundTransactionType } from '../services/fundService';
 import { formatCentavos, parsePesoAmount } from '../utils/money';
@@ -36,6 +37,7 @@ function isInflow(type: FundTransactionRecord['transaction_type']): boolean {
 
 export function FundScreen() {
   const db = useSQLiteContext();
+  const { showToast } = useToast();
   const [summary, setSummary] = useState<FundSummary | null>(null);
   const [transactions, setTransactions] = useState<FundTransactionRecord[]>([]);
   const [formVisible, setFormVisible] = useState(false);
@@ -72,8 +74,10 @@ export function FundScreen() {
     setSaving(true);
     try {
       await addManualFundTransaction(db, { type: movement, amountCentavos, transactionDate, notes });
+      const movementLabel = movement === 'initial_fund' ? 'Initial fund' : movement === 'other_in' ? 'Other income' : 'Other expense';
       setFormVisible(false);
       await refresh();
+      showToast(`${movementLabel} recorded successfully.`, movement === 'other_out' ? 'warning' : 'success');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to save this Fund record.');
     } finally { setSaving(false); }
