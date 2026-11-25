@@ -253,3 +253,56 @@ export async function restoreLoan(db: SQLiteDatabase, loanId: number): Promise<v
     );
   });
 }
+
+
+/**
+ * TESTER-ONLY hard deletion.
+ * This intentionally removes the loan and its dependent financial records.
+ * Remove this function and its UI entry before the custodian release.
+ */
+export async function deleteLoanForTesting(
+  db: SQLiteDatabase,
+  loanId: number,
+): Promise<void> {
+  if (!Number.isSafeInteger(loanId) || loanId <= 0) {
+    throw new Error('Select a valid loan.');
+  }
+
+  await db.withTransactionAsync(async () => {
+    const loan = await db.getFirstAsync<{ id: number; archived_at: string | null }>(
+      'SELECT id, archived_at FROM loans WHERE id = ?',
+      loanId,
+    );
+    if (!loan) throw new Error('Loan record was not found.');
+
+    const finalized = await db.getFirstAsync<{ count: number }>(
+      `SELECT COUNT(*) AS count
+       FROM monthly_reports
+       WHERE report_snapshot_json LIKE ?`,
+      `%"loanId":${loanId}%`,
+    );
+    if ((finalized?.count ?? 0) > 0) {
+      throw new Error('This loan appears in a finalized report and cannot be deleted during testing.');
+    }
+
+    await db.runAsync(
+      "DELETE FROM fund_transactions WHERE reference_type = 'loan' AND reference_id = ?",
+      loanId,
+    );
+    await db.runAsync('DELETE FROM payments WHERE loan_id = ?', loanId);
+    await db.runAsync('DELETE FROM loan_installments WHERE loan_id = ?', loanId);
+    await db.runAsync('DELETE FROM monthly_monitoring WHERE loan_id = ?', loanId);
+    await db.runAsync(
+      "DELETE FROM audit_logs WHERE entity_type = 'loan' AND entity_id = ?",
+      loanId,
+    );
+    await db.runAsync('DELETE FROM loans WHERE id = ?', loanId);
+
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('deleted_for_testing', 'loan', ?, ?)`,
+      loanId,
+      JSON.stringify({ testerOnly: true }),
+    );
+  });
+}

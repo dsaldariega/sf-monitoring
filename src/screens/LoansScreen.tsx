@@ -124,6 +124,30 @@ export function LoansScreen() {
     );
   };
 
+
+  const handleDeleteLoanForTesting = (loan: LoanListItem) => {
+    Alert.alert(
+      'Delete loan permanently?',
+      'TESTER ONLY: this permanently removes the loan, its installments, payments, fund links, and non-finalized audit history. This control must be removed before the custodian release.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete permanently',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteLoanForTesting(db, loan.id);
+              await refreshData();
+              Alert.alert('Loan deleted', 'The tester loan and its dependent test records were removed.');
+            } catch (cause) {
+              setError(cause instanceof Error ? cause.message : 'Unable to delete this loan.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleRestoreLoan = async (loan: LoanListItem) => {
     try {
       await restoreLoan(db, loan.id);
@@ -306,7 +330,7 @@ const styles = StyleSheet.create({
   archiveButton: { alignSelf: 'flex-start', borderWidth: 1, borderColor: '#B42318', borderRadius: 9, paddingVertical: 7, paddingHorizontal: 11, marginTop: 4 },
   archiveButtonText: { color: '#B42318', fontSize: 11, fontWeight: '800' },
   restoreButton: { alignSelf: 'flex-start', borderWidth: 1, borderColor: theme.colors.primary, borderRadius: 9, paddingVertical: 7, paddingHorizontal: 11, marginTop: 4 },
-  restoreButtonText: { color: theme.colors.primary, fontSize: 11, fontWeight: '800' },
+  restoreButtonText: { color: theme.colors.primary, fontSize: 11, fontWeight: '800' },\n  deleteButton: { alignSelf: 'flex-start', borderWidth: 1, borderColor: '#B42318', borderRadius: 9, paddingVertical: 7, paddingHorizontal: 11, marginTop: 4 },\n  deleteButtonText: { color: '#B42318', fontSize: 11, fontWeight: '900' },
   memberDropdown: { borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, padding: 6, maxHeight: 220, backgroundColor: theme.colors.surface },
   memberOption: { padding: 13, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border, marginBottom: 8, gap: 3 },
   memberOptionSelected: { backgroundColor: theme.colors.accent, borderColor: theme.colors.primary },
