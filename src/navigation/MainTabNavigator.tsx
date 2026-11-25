@@ -23,9 +23,10 @@ export function MainTabNavigator() {
           marginBottom: 4,
         },
         tabBarStyle: {
-          height: 64,
+          // Let React Navigation calculate the bottom inset so the app tab bar
+          // stays above Android's system navigation area (gesture or 3-button).
+          minHeight: 64,
           paddingTop: 8,
-          paddingBottom: 7,
           borderTopColor: theme.colors.border,
           backgroundColor: theme.colors.surface,
         },
