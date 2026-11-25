@@ -64,7 +64,9 @@ export function MembersScreen() {
       showToast(`Member ${deletedCode} deleted successfully.`, 'error');
     } catch (cause) {
       setDeleteTarget(null);
-      setError(cause instanceof Error ? cause.message : 'Unable to delete this member.');
+const message = cause instanceof Error ? cause.message : 'Unable to delete this member.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setDeleting(false); }
   };
 
