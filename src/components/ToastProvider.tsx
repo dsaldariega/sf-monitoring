@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useState, type PropsWithChildren } 
 import { StyleSheet, Text, View } from 'react-native';
 import { theme } from '../constants/theme';
 
-export type ToastKind = 'success' | 'error' | 'warning' | 'info';
+export type ToastKind = 'success' | 'error' | 'warning' | 'info' | 'destructive';
 
 type ToastState = {
   message: string;
@@ -31,7 +31,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
       {toast ? (
         <View pointerEvents="none" style={styles.host}>
           <View style={[styles.toast, styles[toast.kind]]}>
-            <Text style={styles.title}>{toast.kind === 'success' ? 'Success' : toast.kind === 'error' ? 'Error' : toast.kind === 'warning' ? 'Notice' : 'Info'}</Text>
+            <Text style={styles.title}>{toast.kind === 'success' ? 'Success' : toast.kind === 'destructive' ? 'Deleted' : toast.kind === 'error' ? 'Error' : toast.kind === 'warning' ? 'Notice' : 'Info'}</Text>
             <Text style={styles.message}>{toast.message}</Text>
           </View>
         </View>
@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
   },
   success: { backgroundColor: '#E8F5EE', borderColor: '#9AD4B2' },
   error: { backgroundColor: '#FCE8E6', borderColor: '#E2A5A0' },
+  destructive: { backgroundColor: '#FCE8E6', borderColor: '#E2A5A0' },
   warning: { backgroundColor: '#FFF4E5', borderColor: '#F1C48B' },
   info: { backgroundColor: theme.colors.accent, borderColor: theme.colors.border },
   title: { color: theme.colors.text, fontSize: 11, fontWeight: '900' },
