@@ -272,6 +272,40 @@ export async function listRecentSinkingFundPayments(
   );
 }
 
+export async function deleteSinkingFundPayment(
+  db: SQLiteDatabase,
+  paymentId: number,
+): Promise<void> {
+  if (!Number.isSafeInteger(paymentId) || paymentId <= 0) {
+    throw new Error('Select a valid Sinking Fund collection.');
+  }
+
+  await db.withTransactionAsync(async () => {
+    const payment = await db.getFirstAsync<{ id: number; member_id: number; amount_centavos: number }>(
+      'SELECT id, member_id, amount_centavos FROM sinking_fund_payments WHERE id = ?',
+      paymentId,
+    );
+    if (!payment) throw new Error('The Sinking Fund collection was not found.');
+
+    await db.runAsync(
+      'DELETE FROM sinking_fund_allocations WHERE payment_id = ?',
+      paymentId,
+    );
+    await db.runAsync(
+      "DELETE FROM fund_transactions WHERE transaction_type = 'contribution' AND reference_type = 'sinking_fund_payment' AND reference_id = ?",
+      paymentId,
+    );
+    await db.runAsync('DELETE FROM sinking_fund_payments WHERE id = ?', paymentId);
+
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('deleted', 'sinking_fund_payment', ?, ?)`,
+      paymentId,
+      JSON.stringify({ memberId: payment.member_id, amountCentavos: payment.amount_centavos }),
+    );
+  });
+}
+
 export function currentSinkingFundWeek(date = new Date()): string {
   return sundayOfWeek(formatDate(date));
 }
