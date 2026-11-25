@@ -31,8 +31,10 @@ export function SettingsScreen() {
     setError('');
     setBusy(true);
     try {
-      await restoreDatabaseBackup(db);
-      Alert.alert('Database restored', 'The selected backup is now the active local database.');
+      const restored = await restoreDatabaseBackup(db);
+      if (restored) {
+        Alert.alert('Database restored', 'The selected backup is now the active local database.');
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to restore the selected backup.');
     } finally { setBusy(false); }
