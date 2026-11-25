@@ -7,7 +7,7 @@ import { ReportsScreen } from '../screens/ReportsScreen';
 import { FundScreen } from '../screens/FundScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import type { MainTabParamList } from './navigation.types';
-import { theme } from '../constants/theme';
+import { MainTabBar } from './MainTabBar';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -15,23 +15,9 @@ export function MainTabNavigator() {
   return (
     <Tab.Navigator
       initialRouteName="Dashboard"
+      tabBar={(props) => <MainTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.muted,
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '700',
-          marginBottom: 4,
-        },
-        tabBarStyle: {
-          // Let React Navigation calculate the bottom inset so the app tab bar
-          // stays above Android's system navigation area (gesture or 3-button).
-          minHeight: 64,
-          paddingTop: 8,
-          borderTopColor: theme.colors.border,
-          backgroundColor: theme.colors.surface,
-        },
       }}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />

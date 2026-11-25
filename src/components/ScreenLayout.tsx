@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
 
@@ -15,8 +15,15 @@ export function ScreenLayout({ title, description, children }: ScreenLayoutProps
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.brandRow}>
+          <Image source={require('../../assets/icon.png')} style={styles.logo} />
+          <View style={styles.brandText}>
+            <Text style={styles.eyebrow}>SINKING FUND</Text>
+            <Text style={styles.brandName}>Monthly Monitor</Text>
+          </View>
+        </View>
+
         <View style={styles.heading}>
-          <Text style={styles.eyebrow}>SINKING FUND MONTHLY MONITOR</Text>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.description}>{description}</Text>
         </View>
@@ -36,14 +43,33 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
     gap: theme.spacing.lg,
   },
-  heading: {
-    gap: 7,
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+  },
+  logo: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+  },
+  brandText: {
+    gap: 1,
   },
   eyebrow: {
     color: theme.colors.primary,
-    fontSize: 10,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+  brandName: {
+    color: theme.colors.text,
+    fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 1.3,
+    letterSpacing: -0.2,
+  },
+  heading: {
+    gap: 7,
   },
   title: {
     color: theme.colors.text,
