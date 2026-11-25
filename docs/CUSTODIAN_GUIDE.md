@@ -29,15 +29,14 @@ Please:
 
 The application has eight main sections:
 
-1. **Dashboard** - quick overview of the fund and loan portfolio.
-2. **Members** - add and view members.
+1. **Dashboard** - quick overview of the weekly fund collection and loan portfolio.
+2. **Members** - add and view members and their registered heads.
 3. **Loans** - create and manage loans.
 4. **Payments** - record loan payments.
 5. **Sinking Fund** - record and review the strict weekly ₱50-per-head collection.
-6. **Payments** - record loan payments.
-7. **Loan Reports** - review and finalize monthly loan collection reports.
-8. **Fund** - manage the fund ledger and balance.
-9. **Settings** - backup and restore the database.
+6. **Loan Reports** - review and finalize monthly loan collection reports.
+7. **Fund** - manage the fund ledger and balance.
+8. **Settings** - backup and restore the database.
 
 > **Screenshot placeholder:** Main menu / Dashboard
 
