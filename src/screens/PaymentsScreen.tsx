@@ -60,7 +60,9 @@ export function PaymentsScreen() {
       await refreshData();
       showToast(`Payment for ${paymentLabel} recorded successfully.`, 'success');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to record this payment.');
+const message = cause instanceof Error ? cause.message : 'Unable to record this payment.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setSaving(false); }
   };
 
