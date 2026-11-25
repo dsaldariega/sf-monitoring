@@ -4,12 +4,13 @@ import type { MemberRecord } from '../database/database.types';
 export type CreateMemberInput = {
   memberCode: string;
   fullName?: string;
+  heads: number;
   contactNumber?: string;
 };
 
 export async function listMembers(db: SQLiteDatabase): Promise<MemberRecord[]> {
   return db.getAllAsync<MemberRecord>(
-    `SELECT id, member_code, full_name, contact_number, reference_note,
+    `SELECT id, member_code, full_name, heads, contact_number, reference_note,
             is_active, created_at, updated_at
      FROM members
      ORDER BY is_active DESC, member_code COLLATE NOCASE ASC`
@@ -40,13 +41,18 @@ export async function createMember(
     throw new Error('Member ID must contain numbers only.');
   }
 
+  if (!Number.isSafeInteger(input.heads) || input.heads < 1 || input.heads > 999) {
+    throw new Error('Heads must be a whole number from 1 to 999.');
+  }
+
   let memberId = 0;
   await db.withTransactionAsync(async () => {
     const result = await db.runAsync(
-      `INSERT INTO members (member_code, full_name, contact_number, reference_note)
-       VALUES (?, ?, ?, NULL)`,
+      `INSERT INTO members (member_code, full_name, heads, contact_number, reference_note)
+       VALUES (?, ?, ?, ?, NULL)`,
       memberCode,
       fullName,
+      input.heads,
       input.contactNumber?.trim() || null
     );
     memberId = result.lastInsertRowId;
@@ -57,7 +63,7 @@ export async function createMember(
       'created',
       'member',
       memberId,
-      JSON.stringify({ memberCode })
+      JSON.stringify({ memberCode, heads: input.heads })
     );
   });
 
