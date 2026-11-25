@@ -15,6 +15,7 @@ export type MemberRecord = {
   id: number;
   member_code: string;
   full_name: string;
+  heads: number;
   contact_number: string | null;
   reference_note: string | null;
   is_active: 0 | 1;
@@ -76,5 +77,32 @@ export type FundTransactionRecord = {
   reference_type: string | null;
   reference_id: number | null;
   notes: string | null;
+  created_at: string;
+};
+
+
+export type SinkingFundWeekRecord = {
+  id: number;
+  member_id: number;
+  week_start: string;
+  due_centavos: number;
+  paid_centavos: number;
+  remaining_centavos: number;
+};
+
+export type SinkingFundPaymentRecord = {
+  id: number;
+  member_id: number;
+  paid_on: string;
+  amount_centavos: number;
+  notes: string | null;
+  created_at: string;
+};
+
+export type SinkingFundAllocationRecord = {
+  id: number;
+  payment_id: number;
+  week_id: number;
+  amount_centavos: number;
   created_at: string;
 };
