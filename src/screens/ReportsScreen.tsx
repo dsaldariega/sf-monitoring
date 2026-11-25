@@ -4,7 +4,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { SectionCard } from "../components/SectionCard";
-import { theme } from "../constants/theme";\nimport { exportMonthlyReportCsv } from "../services/backupService";
+import { theme } from "../constants/theme";
+import { exportMonthlyReportCsv } from "../services/backupService";
 import {
   currentPeriodMonth,
   finalizeMonthlyReport,
@@ -36,7 +37,8 @@ export function ReportsScreen() {
   const [reports, setReports] = useState<MonthlyReportRecord[]>([]);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);\n  const [exporting, setExporting] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const latestPeriod = currentPeriodMonth();
 
   const selectedReport =
@@ -94,15 +96,21 @@ export function ReportsScreen() {
     }, [refresh]),
   );
 
-
   const handleExportCsv = async () => {
     setExporting(true);
     setError("");
     try {
       await exportMonthlyReportCsv(db, period);
-      Alert.alert("Report exported", "The CSV report was prepared in the Android share sheet.");
+      Alert.alert(
+        "Report exported",
+        "The CSV report was prepared in the Android share sheet.",
+      );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to export this report.");
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to export this report.",
+      );
     } finally {
       setExporting(false);
     }
@@ -405,7 +413,21 @@ const styles = StyleSheet.create({
   },
   loanAmount: { color: theme.colors.primary, fontSize: 12, fontWeight: "800" },
   loanMeta: { color: theme.colors.muted, fontSize: 10 },
-  secondaryButton: {\n    minHeight: 44,\n    borderRadius: 12,\n    borderWidth: 1,\n    borderColor: theme.colors.primary,\n    alignItems: "center",\n    justifyContent: "center",\n    paddingHorizontal: 16,\n  },\n  secondaryButtonText: { color: theme.colors.primary, fontSize: 13, fontWeight: "800" },\n  primaryButton: {
+  secondaryButton: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  secondaryButtonText: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  primaryButton: {
     minHeight: 46,
     borderRadius: 12,
     backgroundColor: theme.colors.primary,
