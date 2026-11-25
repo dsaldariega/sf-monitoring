@@ -106,7 +106,9 @@ export function LoansScreen() {
       showToast(`${deletedLabel} loan deleted successfully.`, 'error');
     } catch (cause) {
       setDeleteTarget(null);
-      setError(cause instanceof Error ? cause.message : 'Unable to delete this loan.');
+const message = cause instanceof Error ? cause.message : 'Unable to delete this loan.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setDeleting(false); }
   };
 
