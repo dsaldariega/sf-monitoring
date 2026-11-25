@@ -529,7 +529,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 10,
   },
-  snapshot: { gap: 7, paddingTop: 7 },\n  expandHint: { color: theme.colors.primary, fontSize: 10, fontWeight: "700", marginTop: 2 },
+  snapshot: { gap: 7, paddingTop: 7 },
+  expandHint: { color: theme.colors.primary, fontSize: 10, fontWeight: "700", marginTop: 2 },
   deleteButton: {
     minHeight: 40,
     borderRadius: 10,
