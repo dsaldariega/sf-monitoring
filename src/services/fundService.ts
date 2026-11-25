@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { FundTransactionRecord } from '../database/database.types';
 
-export type ManualFundTransactionType = 'initial_fund' | 'contribution' | 'other_in' | 'other_out';
+export type ManualFundTransactionType = 'initial_fund' | 'other_in' | 'other_out';
 
 export type FundSummary = {
   initialFundCentavos: number;
@@ -69,7 +69,7 @@ export async function addManualFundTransaction(
     notes?: string;
   }
 ): Promise<number> {
-  if (!['initial_fund', 'contribution', 'other_in', 'other_out'].includes(input.type)) {
+  if (!['initial_fund', 'other_in', 'other_out'].includes(input.type)) {
     throw new Error('Select a valid fund transaction type.');
   }
   if (!Number.isSafeInteger(input.amountCentavos) || input.amountCentavos <= 0) {

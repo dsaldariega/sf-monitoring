@@ -132,7 +132,7 @@ export function ReportsScreen() {
               await refresh();
               Alert.alert(
                 "Report finalized",
-                "The monthly snapshot has been saved on this device.",
+                "The monthly loan report snapshot has been saved on this device.",
               );
             } catch (cause) {
               setError(
@@ -172,12 +172,12 @@ export function ReportsScreen() {
 
   return (
     <ScreenLayout
-      title="Reports"
-      description="Preview monthly activity and preserve finalized historical summaries."
+      title="Loan Reports"
+      description="Review monthly loan collections, portfolio activity, and finalized historical loan reports."
     >
       <SectionCard
-        title="Monthly report"
-        subtitle="Choose a month to review its loan activity and collection figures."
+        title="Monthly loan collection report"
+        subtitle="Choose a month to review the loan collection target, actual payments, and portfolio activity."
       >
         <View style={styles.monthSelector}>
           <Pressable

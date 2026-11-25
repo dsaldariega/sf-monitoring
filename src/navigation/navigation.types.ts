@@ -3,6 +3,7 @@ export type MainTabParamList = {
   Members: undefined;
   Loans: undefined;
   Payments: undefined;
+  SinkingFund: undefined;
   Reports: undefined;
   Fund: undefined;
   Settings: undefined;

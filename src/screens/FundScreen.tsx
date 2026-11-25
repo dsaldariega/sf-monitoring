@@ -22,7 +22,6 @@ const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0'
 
 const transactionOptions: { value: ManualFundTransactionType; label: string }[] = [
   { value: 'initial_fund', label: 'Initial fund' },
-  { value: 'contribution', label: 'Contribution' },
   { value: 'other_in', label: 'Other income' },
   { value: 'other_out', label: 'Other expense' },
 ];
@@ -61,7 +60,7 @@ export function FundScreen() {
       ]);
       setSummary(nextSummary);
       setTransactions(nextTransactions);
-      setType(current => current === 'initial_fund' && nextSummary.initialFundCount > 0 ? 'contribution' : current);
+      setType(current => current === 'initial_fund' && nextSummary.initialFundCount > 0 ? 'other_in' : current);
       setError('');
     } catch {
       setError('Unable to load fund records from this device.');
@@ -105,11 +104,11 @@ export function FundScreen() {
     <ScreenLayout title="Fund" description="Track the available sinking fund balance and every recorded movement of money.">
       <View style={styles.metrics}>
         <MetricCard label="Available balance" value={formatCentavos(summary?.availableBalanceCentavos ?? 0)} helper="Calculated from all ledger entries" emphasized />
-        <MetricCard label="Total inflow" value={formatCentavos(summary?.totalInflowCentavos ?? 0)} helper="Initial fund, contributions and collections" />
+        <MetricCard label="Total inflow" value={formatCentavos(summary?.totalInflowCentavos ?? 0)} helper="Initial fund, weekly contributions and loan collections" />
         <MetricCard label="Total outflow" value={formatCentavos(summary?.totalOutflowCentavos ?? 0)} helper="Loan releases and other expenses" />
       </View>
 
-      <SectionCard title="Add fund entry" subtitle="Loan releases and loan collections are recorded automatically. Add only the other fund movements here.">
+      <SectionCard title="Add fund entry" subtitle="Weekly Sinking Fund collections, loan releases, and loan collections are recorded automatically. Add only the initial fund or other fund movements here.">
         <Text style={styles.label}>Transaction type</Text>
         <View style={styles.typeOptions}>
           {transactionOptions.map(option => {

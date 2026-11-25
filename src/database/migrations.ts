@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export const DATABASE_VERSION = 4;
+export const DATABASE_VERSION = 5;
 
 type Migration = {
   version: number;
@@ -182,6 +182,53 @@ const migrations: Migration[] = [
           AND reference_type = 'loan'
           AND reference_id = loans.id
       );
+    `,
+  },
+  {
+    version: 5,
+    sql: `
+      ALTER TABLE members ADD COLUMN heads INTEGER NOT NULL DEFAULT 1 CHECK (heads > 0);
+
+      CREATE TABLE sinking_fund_weeks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        member_id INTEGER NOT NULL REFERENCES members(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        week_start TEXT NOT NULL CHECK (length(week_start) = 10),
+        due_centavos INTEGER NOT NULL CHECK (due_centavos > 0),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (member_id, week_start)
+      );
+
+      CREATE INDEX idx_sinking_fund_weeks_week_start
+        ON sinking_fund_weeks(week_start);
+
+      CREATE TABLE sinking_fund_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        member_id INTEGER NOT NULL REFERENCES members(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        paid_on TEXT NOT NULL,
+        amount_centavos INTEGER NOT NULL CHECK (amount_centavos > 0),
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX idx_sinking_fund_payments_member_id
+        ON sinking_fund_payments(member_id);
+      CREATE INDEX idx_sinking_fund_payments_paid_on
+        ON sinking_fund_payments(paid_on);
+
+      CREATE TABLE sinking_fund_allocations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_id INTEGER NOT NULL REFERENCES sinking_fund_payments(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        week_id INTEGER NOT NULL REFERENCES sinking_fund_weeks(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        amount_centavos INTEGER NOT NULL CHECK (amount_centavos > 0),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (payment_id, week_id)
+      );
+
+      CREATE INDEX idx_sinking_fund_allocations_week_id
+        ON sinking_fund_allocations(week_id);
+      CREATE INDEX idx_sinking_fund_allocations_payment_id
+        ON sinking_fund_allocations(payment_id);
     `,
   },
 ];

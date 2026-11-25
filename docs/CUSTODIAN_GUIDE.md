@@ -27,15 +27,16 @@ Please:
 
 ## 2. Main Menu
 
-The application has seven main sections:
+The application has eight main sections:
 
-1. **Dashboard** - quick overview of the fund and loan portfolio.
-2. **Members** - add and view members.
+1. **Dashboard** - quick overview of the weekly fund collection and loan portfolio.
+2. **Members** - add and view members and their registered heads.
 3. **Loans** - create and manage loans.
 4. **Payments** - record loan payments.
-5. **Reports** - review and finalize monthly monitoring.
-6. **Fund** - manage the fund ledger and balance.
-7. **Settings** - backup and restore the database.
+5. **Sinking Fund** - record and review the strict weekly ₱50-per-head collection.
+6. **Loan Reports** - review and finalize monthly loan collection reports.
+7. **Fund** - manage the fund ledger and balance.
+8. **Settings** - backup and restore the database.
 
 > **Screenshot placeholder:** Main menu / Dashboard
 
@@ -68,6 +69,16 @@ For example:
 - Member 3
 
 Use a consistent numbering system.
+
+### Heads
+
+Enter the number of registered heads for the member. The weekly Sinking Fund due is automatically calculated as **₱50 × heads**.
+
+Example:
+
+- 2 heads = ₱100/week
+- 5 heads = ₱250/week
+- 20 heads = ₱1,000/week
 
 ### Full name
 
@@ -222,7 +233,69 @@ When all required installments and applicable penalties have been settled, the l
 
 ---
 
-## 7. Dashboard
+## 7. Sinking Fund — Weekly Collection
+
+The Sinking Fund is collected **strictly every week** at **₱50 per registered head**. The weekly collection is tracked using a Sunday week.
+
+### Weekly target
+
+The application calculates:
+
+**Weekly target = Total active heads × ₱50**
+
+For example:
+
+- 35 members
+- 210 total heads
+- Weekly target = 210 × ₱50 = **₱10,500**
+
+### Recording a weekly collection
+
+1. Open **Sinking Fund**.
+2. Select the collection week.
+3. Select the member.
+4. Review the member's heads and weekly due.
+5. Enter the amount actually collected.
+6. Save the collection.
+
+The weekly status shows each member's due, amount collected, and remaining amount.
+
+### Advance payments
+
+Advance payments are supported.
+
+If a member pays more than the current week's due, the application automatically applies the payment to consecutive future weekly dues.
+
+Example:
+
+- Weekly due: ₱250
+- Member pays: ₱600
+- Current week: ₱250 covered
+- Next week: ₱250 covered
+- Remaining ₱100: carried to the following week
+
+This keeps the weekly obligation intact while allowing advance payment.
+
+### Weekly report
+
+The Sinking Fund screen shows:
+
+- Collection week
+- Total members
+- Total heads
+- Weekly target
+- Amount collected
+- Remaining amount
+- Member-by-member weekly status
+- Recent Sinking Fund collections
+
+The weekly Sinking Fund collection is separate from loan repayments.
+
+> **Screenshot placeholder:** Weekly Sinking Fund screen
+
+---
+
+## 8. Dashboard
 
 The Dashboard provides a quick overview of the current fund and loan portfolio.
 
@@ -243,13 +316,13 @@ The Dashboard is intended as a quick status screen. Use the Reports and Fund sec
 
 ---
 
-## 8. Monthly Reports
+## 9. Loan Reports
 
-The Reports section is used for monthly monitoring.
+The Loan Reports section is used for monthly loan collection monitoring. It is separate from the weekly Sinking Fund collection report.
 
 ### Reviewing a month
 
-1. Open **Reports**.
+1. Open **Loan Reports**.
 2. Select the month to review.
 3. Review the monthly summary.
 4. Review the individual loan activity.
@@ -269,7 +342,7 @@ Review the month's records carefully before finalizing.
 
 > **Screenshot placeholder:** Monthly Reports screen
 
-### Exporting the monthly report
+### Exporting the monthly loan report
 
 The application can export the selected month's report as a **CSV file**.
 
@@ -277,7 +350,7 @@ This is an export function for reporting purposes.
 
 ---
 
-## 9. Fund
+## 10. Fund
 
 The Fund section provides a ledger of fund movements.
 
@@ -304,7 +377,7 @@ Use the Fund section when you need to verify how much money is currently availab
 
 ---
 
-## 10. Loan Archiving
+## 11. Loan Archiving
 
 Completed or inactive loans can be archived.
 
@@ -323,7 +396,7 @@ If an archived loan needs to return to the active portfolio, use the restore act
 
 ---
 
-## 11. Backup and Restore
+## 12. Backup and Restore
 
 The application stores its working database locally on the device.
 
@@ -368,7 +441,7 @@ The restore function validates the selected database before attempting to restor
 
 ---
 
-## 12. Importing Data
+## 13. Importing Data
 
 There is currently **no general data import feature**.
 
@@ -386,7 +459,7 @@ The **Restore Database** function is different from importing data. It restores 
 
 ---
 
-## 13. Monthly Operating Routine
+## 14. Monthly Operating Routine
 
 A simple routine is recommended.
 
@@ -410,7 +483,7 @@ A simple routine is recommended.
 
 ---
 
-## 14. Backup Safety
+## 15. Backup Safety
 
 The database backup may contain confidential financial information.
 
@@ -426,7 +499,7 @@ Recommended practices:
 
 ---
 
-## 15. Common Situations
+## 16. Common Situations
 
 ### A member's name is unknown or should not be stored
 
@@ -456,12 +529,15 @@ Create a database backup from the old device and keep it securely. Use the Resto
 
 ---
 
-## 16. Important Rules to Remember
+## 17. Important Rules to Remember
 
 | Item | Rule |
 |---|---|
 | Member ID | Numbers only |
 | Member name | Optional |
+| Heads | Required whole number; ₱50 per head per week |
+| Weekly Sinking Fund | ₱50 per head, collected weekly |
+| Advance weekly payment | Supported; carries forward to consecutive future weeks |
 | Monthly interest | 5% of original principal |
 | Payment interval | Every 15 calendar days |
 | Penalty | 2.5% of original principal per missed installment |
@@ -477,7 +553,7 @@ Create a database backup from the old device and keep it securely. Use the Resto
 
 ---
 
-## 17. Before Using the App for Actual Records
+## 18. Before Using the App for Actual Records
 
 Before entering live records:
 
@@ -493,7 +569,7 @@ Before entering live records:
 
 ---
 
-## 18. Support / Troubleshooting
+## 19. Support / Troubleshooting
 
 If something appears incorrect:
 
@@ -509,21 +585,21 @@ When reporting a problem, provide a description of what happened and, if possibl
 
 ---
 
-## 19. Screenshot Guide
+## 20. Screenshot Guide
 
 Screenshots will be added to this guide after the custodian's first round of testing and feedback.
 
 Recommended screenshots:
 
 1. Main Dashboard
-2. Add Member
-3. Member list
-4. Add Loan
-5. Loan calculation/payment schedule
-6. Payments loan selector
-7. Payment recording
-8. Payment history
-9. Monthly Report
+2. Add Member with Heads
+3. Member list with weekly due
+4. Weekly Sinking Fund
+5. Add Loan
+6. Loan calculation/payment schedule
+7. Loan Payments selector
+8. Payment recording/history
+9. Monthly Loan Report
 10. Fund ledger
 11. Archived Loans
 12. Backup/Restore settings
@@ -538,11 +614,13 @@ Screenshots should use sample/test records rather than real confidential member 
 
 **Create loan:** Loans → Add Loan → Select Member → Optional Alias → Enter Loan Details → Save
 
-**Record payment:** Payments → Select Member/Loan → Review Payment per Due Date → Enter Amount → Save
+**Review weekly collection:** Sinking Fund → Select Sunday Week → Review → Record Collections
 
-**Review month:** Reports → Select Month → Review → Finalize when complete
+**Record loan payment:** Payments → Select Member/Loan → Review Payment per Due Date → Enter Amount → Save
 
-**Export report:** Reports → Select Month → Export CSV
+**Review loan month:** Loan Reports → Select Month → Review → Finalize when complete
+
+**Export loan report:** Loan Reports → Select Month → Export CSV
 
 **Backup:** Settings → Backup Database
 
