@@ -130,3 +130,37 @@ export async function updateMemberHeads(
     );
   });
 }
+
+
+export async function deleteMember(db: SQLiteDatabase, memberId: number): Promise<void> {
+  if (!Number.isSafeInteger(memberId) || memberId <= 0) throw new Error('Select a valid member.');
+
+  await db.withTransactionAsync(async () => {
+    const member = await db.getFirstAsync<{ id: number; member_code: string }>(
+      'SELECT id, member_code FROM members WHERE id = ?', memberId
+    );
+    if (!member) throw new Error('Member record was not found.');
+
+    const loanCount = await db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM loans WHERE member_id = ?', memberId
+    );
+    const weeklyPaymentCount = await db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM sinking_fund_payments WHERE member_id = ?', memberId
+    );
+    const weeklyWeekCount = await db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM sinking_fund_weeks WHERE member_id = ?', memberId
+    );
+
+    if ((loanCount?.count ?? 0) > 0 || (weeklyPaymentCount?.count ?? 0) > 0 || (weeklyWeekCount?.count ?? 0) > 0) {
+      throw new Error('This member has financial history. Permanent deletion is blocked to protect records. Add a new member instead.');
+    }
+
+    await db.runAsync('DELETE FROM audit_logs WHERE entity_type = ? AND entity_id = ?', 'member', memberId);
+    await db.runAsync('DELETE FROM members WHERE id = ?', memberId);
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('deleted', 'member', NULL, ?)`,
+      JSON.stringify({ memberCode: member.member_code, deletedMemberId: memberId })
+    );
+  });
+}
