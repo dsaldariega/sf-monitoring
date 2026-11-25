@@ -94,7 +94,7 @@ export function SinkingFundScreen() {
       await deleteSinkingFundPayment(db, deleteTarget.id);
       setDeleteTarget(null);
       await refresh();
-      showToast(`Sinking Fund collection for ${memberLabel} deleted.`, 'error');
+      showToast(`Sinking Fund collection for ${memberLabel} deleted.`, 'destructive');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to delete this collection.');
       showToast(cause instanceof Error ? cause.message : 'Unable to delete this collection.', 'error');
