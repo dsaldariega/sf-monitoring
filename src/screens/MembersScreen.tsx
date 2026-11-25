@@ -9,9 +9,11 @@ import { SectionCard } from '../components/SectionCard';
 import type { MemberRecord } from '../database/database.types';
 import { createMember, deleteMember, listMembers } from '../services/memberService';
 import { theme } from '../constants/theme';
+import { useToast } from '../components/ToastProvider';
 
 export function MembersScreen() {
   const db = useSQLiteContext();
+  const { showToast } = useToast();
   const [members, setMembers] = useState<MemberRecord[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MemberRecord | null>(null);
@@ -45,6 +47,7 @@ export function MembersScreen() {
       await createMember(db, { memberCode, fullName, heads: nextHeads, contactNumber });
       setModalVisible(false);
       await refreshMembers();
+      showToast(`Member ${memberCode.trim()} added successfully.`, 'success');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to save this member.');
     } finally { setSaving(false); }
@@ -54,9 +57,11 @@ export function MembersScreen() {
     if (!deleteTarget) return;
     setDeleting(true); setError('');
     try {
+      const deletedCode = deleteTarget.member_code;
       await deleteMember(db, deleteTarget.id);
       setDeleteTarget(null);
       await refreshMembers();
+      showToast(`Member ${deletedCode} deleted successfully.`, 'error');
     } catch (cause) {
       setDeleteTarget(null);
       setError(cause instanceof Error ? cause.message : 'Unable to delete this member.');
