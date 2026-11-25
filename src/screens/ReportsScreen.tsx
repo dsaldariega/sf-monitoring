@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { AppModal, ModalActions } from '../components/AppModal';
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppModal, ModalActions } from "../components/AppModal";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
 import { ScreenLayout } from "../components/ScreenLayout";
@@ -361,11 +361,22 @@ export function ReportsScreen() {
         visible={exportModalVisible}
         title="Export this month as CSV?"
         subtitle={displayMonth(period)}
-        onClose={() => { if (!exporting) setExportModalVisible(false); }}
-        footer={<ModalActions primaryLabel="Export CSV" onPrimary={() => void handleExportCsv()} onSecondary={() => setExportModalVisible(false)} busy={exporting} />}
+        onClose={() => {
+          if (!exporting) setExportModalVisible(false);
+        }}
+        footer={
+          <ModalActions
+            primaryLabel="Export CSV"
+            onPrimary={() => void handleExportCsv()}
+            onSecondary={() => setExportModalVisible(false)}
+            busy={exporting}
+          />
+        }
       >
         <Text style={styles.exportMessage}>
-          This will export the selected month's loan collection report as a CSV file. The export includes loan summary figures and per-loan collection details. The file will be prepared for sharing after you confirm.
+          This will export the selected month's loan collection report as a CSV
+          file. The export includes loan summary figures and per-loan collection
+          details. The file will be prepared for sharing after you confirm.
         </Text>
         <Text style={styles.exportHint}>
           Review the selected month before continuing.
