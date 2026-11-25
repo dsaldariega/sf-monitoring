@@ -138,7 +138,7 @@ export function LoansScreen() {
             <View style={styles.ruleLine}><Text style={styles.ruleLabel}>Total payable</Text><Text style={styles.totalValue}>{formatCentavos(terms.totalPayableCentavos)}</Text></View>
             <View style={styles.ruleLine}><Text style={styles.ruleLabel}>Installments</Text><Text style={styles.ruleValue}>{terms.installmentCount} payments</Text></View>
             <View style={styles.ruleLine}><Text style={styles.ruleLabel}>Regular installment</Text><Text style={styles.totalValue}>{formatCentavos(terms.baseInstallment)}</Text></View>
-            <View style={styles.ruleLine}><Text style={styles.ruleLabel}>Penalty per missed due date</Text><Text style={styles.penaltyValue}>{formatCentavos(Math.round(principalCentavos * 0.025))}</Text></View>
+            <View style={styles.ruleLine}><Text style={styles.ruleLabel}>Penalty per missed due date</Text><Text style={styles.penaltyValue}>{formatCentavos(terms.penaltyCentavos)}</Text></View>
             {schedule.length > 0 ? (
               <View style={styles.scheduleList}>
                 <Text style={styles.scheduleTitle}>Scheduled due dates</Text>
