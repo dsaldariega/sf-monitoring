@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DashboardScreen } from '../screens/DashboardScreen';
+import { MembersScreen } from '../screens/MembersScreen';
 import { LoansScreen } from '../screens/LoansScreen';
 import { PaymentsScreen } from '../screens/PaymentsScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
@@ -33,6 +34,7 @@ export function MainTabNavigator() {
       }}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Members" component={MembersScreen} />
       <Tab.Screen name="Loans" component={LoansScreen} />
       <Tab.Screen name="Payments" component={PaymentsScreen} />
       <Tab.Screen name="Reports" component={ReportsScreen} />
