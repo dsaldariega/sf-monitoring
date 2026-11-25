@@ -90,7 +90,9 @@ export function LoansScreen() {
       await refreshData();
       showToast(`Loan ${alias.trim().toUpperCase() || 'record'} created successfully.`, 'success');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save this loan.');
+      const message = cause instanceof Error ? cause.message : 'Unable to save this loan.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setSaving(false); }
   };
 
