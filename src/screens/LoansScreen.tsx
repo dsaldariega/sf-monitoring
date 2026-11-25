@@ -20,12 +20,14 @@ import {
 } from '../services/loanService';
 import { formatCentavos, parsePesoAmount } from '../utils/money';
 import { theme } from '../constants/theme';
+import { useToast } from '../components/ToastProvider';
 
 const now = new Date();
 const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
 export function LoansScreen() {
   const db = useSQLiteContext();
+  const { showToast } = useToast();
   const [members, setMembers] = useState<MemberRecord[]>([]);
   const [loans, setLoans] = useState<LoanListItem[]>([]);
   const [formVisible, setFormVisible] = useState(false);
@@ -86,6 +88,7 @@ export function LoansScreen() {
       await createLoan(db, { memberId, principalAmountCentavos: principalCentavos, alias, loanDate, termMonths: term, remarks });
       setFormVisible(false);
       await refreshData();
+      showToast(`Loan ${alias.trim().toUpperCase() || 'record'} created successfully.`, 'success');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to save this loan.');
     } finally { setSaving(false); }
@@ -96,9 +99,11 @@ export function LoansScreen() {
     setDeleting(true);
     setError('');
     try {
+      const deletedLabel = `Member ${deleteTarget.member_code}${deleteTarget.alias ? ` · ${deleteTarget.alias}` : ''}`;
       await deleteLoan(db, deleteTarget.id);
       setDeleteTarget(null);
       await refreshData();
+      showToast(`${deletedLabel} loan deleted successfully.`, 'error');
     } catch (cause) {
       setDeleteTarget(null);
       setError(cause instanceof Error ? cause.message : 'Unable to delete this loan.');
