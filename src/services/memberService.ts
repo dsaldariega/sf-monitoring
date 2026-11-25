@@ -19,7 +19,7 @@ export async function listMembers(db: SQLiteDatabase): Promise<MemberRecord[]> {
 
 export async function listActiveMembers(db: SQLiteDatabase): Promise<MemberRecord[]> {
   return db.getAllAsync<MemberRecord>(
-    `SELECT id, member_code, full_name, contact_number, reference_note,
+    `SELECT id, member_code, full_name, heads, contact_number, reference_note,
             is_active, created_at, updated_at
      FROM members
      WHERE is_active = 1
