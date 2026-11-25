@@ -51,7 +51,14 @@ export function SinkingFundScreen() {
   useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
 
   const openCollectionModal = () => {
-    setError(''); setMemberPickerVisible(false); setAmount(selectedMember?.remainingCentavos ? (selectedMember.remainingCentavos / 100).toFixed(2) : ''); setNotes(''); setPaidOn(new Date().toISOString().slice(0, 10)); setFormVisible(true);
+    const localNow = new Date();
+    const localToday = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, '0')}-${String(localNow.getDate()).padStart(2, '0')}`;
+    setError('');
+    setMemberPickerVisible(false);
+    setAmount(selectedMember?.remainingCentavos ? (selectedMember.remainingCentavos / 100).toFixed(2) : '');
+    setNotes('');
+    setPaidOn(localToday);
+    setFormVisible(true);
   };
 
   const handleSave = async () => {
