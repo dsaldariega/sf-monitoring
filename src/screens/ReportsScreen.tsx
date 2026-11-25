@@ -470,4 +470,6 @@ const styles = StyleSheet.create({
   snapshot: { gap: 7, paddingTop: 7 },
   snapshotLoan: { color: theme.colors.text, fontSize: 11, lineHeight: 16 },
   error: { color: "#B42318", fontSize: 12 },
+  exportMessage: { color: theme.colors.text, fontSize: 13, lineHeight: 19 },
+  exportHint: { color: theme.colors.muted, fontSize: 11, lineHeight: 17 },
 });
