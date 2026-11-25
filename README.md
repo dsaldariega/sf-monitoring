@@ -1,6 +1,6 @@
 # Sinking Fund Monthly Monitor
 
-An offline-first Android application for monthly Sinking Fund loan monitoring, collection tracking, portfolio summaries, and end-of-month reporting.
+An offline-first Android application for weekly Sinking Fund collection tracking, loan monitoring, portfolio summaries, fund balance management, and end-of-month loan reporting.
 
 ## Project principles
 
@@ -8,7 +8,9 @@ An offline-first Android application for monthly Sinking Fund loan monitoring, c
 - No backend, Firebase, Supabase, or cloud database.
 - No mandatory authentication.
 - Financial calculations run locally and use integer centavos.
-- Finalized monthly reports preserve historical snapshots.
+- Finalized monthly loan reports preserve historical snapshots.
+- Weekly Sinking Fund collection is strictly ₱50 per registered head and is tracked by Sunday collection week.
+- Advance weekly contributions can cover consecutive future weeks and carry the remaining amount forward.
 - Keep the scope focused on loan monitoring and reporting, not full lending management.
 
 ## Technology
@@ -32,11 +34,11 @@ An offline-first Android application for monthly Sinking Fund loan monitoring, c
 2. SQLite schema, migrations, and financial data models
 3. Member and loan registration
 4. Automatic monthly monitoring and interest calculations
-5. Payment recording and allocation
-6. Monthly Sinking Fund Report
-7. Dashboard and portfolio monitoring
-8. Actual Pondo monitoring
-9. Historical reports and finalization
+5. Payment recording and loan allocation
+6. Weekly Sinking Fund collection and advance allocation
+7. Monthly Loan Collection reporting
+8. Dashboard and fund balance monitoring
+9. Historical loan reports and finalization
 10. Database backup and restore
 11. Testing, APK generation, and documentation
 
@@ -50,4 +52,4 @@ An offline-first Android application for monthly Sinking Fund loan monitoring, c
 
 ## Status
 
-Phases 1-9 are implemented and verified on the `dev` branch. The current work is release hardening, final documentation, and APK testing before the custodian handoff.
+Phases 1-10 are implemented on the `dev` branch. Current work is testing the separated weekly Sinking Fund and monthly Loan Collection workflow, final documentation, and APK testing before the custodian handoff.
