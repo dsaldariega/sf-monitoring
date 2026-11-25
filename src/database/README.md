@@ -18,3 +18,12 @@ The app uses one device-local SQLite database named `sinking-fund-monitor.db`.
 - Loan aliases and installment schedules are stored locally in SQLite.
 
 Do not delete the database to recover from a migration error. Add a new migration and preserve existing records.
+
+## Payment recording (schema v3)
+
+- Payments are applied to the oldest outstanding installment first.
+- If an installment has an assessed penalty, the penalty is settled before that installment's scheduled amount.
+- Partial and multiple payments are supported. Payments larger than the loan's outstanding balance are rejected.
+- Penalty settlements are tracked separately from scheduled installment payments.
+- A loan is marked paid only after every scheduled installment and every assessed penalty is fully settled.
+- Each loan collection is also written to the local fund transaction ledger and audit log.

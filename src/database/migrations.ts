@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export const DATABASE_VERSION = 2;
+export const DATABASE_VERSION = 3;
 
 type Migration = {
   version: number;
@@ -147,6 +147,15 @@ const migrations: Migration[] = [
       );
       CREATE INDEX idx_loan_installments_due_date ON loan_installments(due_date);
       CREATE INDEX idx_loan_installments_loan_id ON loan_installments(loan_id);
+    `,
+  },
+  {
+    version: 3,
+    sql: `
+      ALTER TABLE loan_installments
+        ADD COLUMN penalty_paid_centavos INTEGER NOT NULL DEFAULT 0 CHECK (penalty_paid_centavos >= 0);
+      ALTER TABLE payments
+        ADD COLUMN penalty_allocated_centavos INTEGER NOT NULL DEFAULT 0 CHECK (penalty_allocated_centavos >= 0);
     `,
   },
 ];

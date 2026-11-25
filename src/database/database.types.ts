@@ -48,6 +48,7 @@ export type LoanInstallmentRecord = {
   due_date: string;
   scheduled_amount_centavos: number;
   penalty_amount_centavos: number;
+  penalty_paid_centavos: number;
   paid_amount_centavos: number;
   penalty_assessed_at: string | null;
 };

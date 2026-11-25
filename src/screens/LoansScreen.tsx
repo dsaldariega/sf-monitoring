@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { ScreenLayout } from '../components/ScreenLayout';
@@ -107,16 +107,31 @@ export function LoansScreen() {
         {members.length === 0 ? (
           <Text style={styles.empty}>No active members yet. Add a member in the Members tab first.</Text>
         ) : (
-          <Pressable style={styles.dropdown} onPress={() => setMemberPickerVisible(true)}>
+          <Pressable style={styles.dropdown} onPress={() => setMemberPickerVisible(value => !value)}>
             <View style={{ flex: 1 }}>
               <Text style={selectedMember ? styles.dropdownValue : styles.dropdownPlaceholder}>
                 {selectedMember ? `${selectedMember.member_code} · ${selectedMember.full_name}` : 'Select a member'}
               </Text>
               {selectedMember?.reference_note ? <Text style={styles.dropdownHint}>{selectedMember.reference_note}</Text> : null}
             </View>
-            <Text style={styles.chevron}>⌄</Text>
+            <Text style={styles.chevron}>{memberPickerVisible ? '⌃' : '⌄'}</Text>
           </Pressable>
         )}
+
+        {memberPickerVisible && members.length > 0 ? (
+          <View style={styles.memberDropdown}>
+            <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+              {members.map(member => (
+                <Pressable key={member.id} style={[styles.memberOption, member.id === memberId && styles.memberOptionSelected]}
+                  onPress={() => { setMemberId(member.id); setMemberPickerVisible(false); }}>
+                  <Text style={styles.memberOptionCode}>{member.member_code}</Text>
+                  <Text style={styles.memberOptionName}>{member.full_name}</Text>
+                  {member.reference_note ? <Text style={styles.dropdownHint}>{member.reference_note}</Text> : null}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         <Field label="Loan alias (optional)" value={alias} onChangeText={setAlias} placeholder="e.g. Emergency loan" />
         <Field label="Loan amount (PHP)" value={principal} onChangeText={setPrincipal} placeholder="e.g. 10000.00" keyboardType="decimal-pad" />
@@ -125,10 +140,10 @@ export function LoansScreen() {
 
         <View style={styles.ruleCard}>
           <Text style={styles.ruleTitle}>Loan calculation rules</Text>
-          <View style={styles.ruleLine}><Text style={styles.ruleLabel}>Monthly interest</Text><Text style={styles.ruleValue}>5% of original principal</Text></View>
-          <View style={styles.ruleLine}><Text style={styles.ruleLabel}>Payment frequency</Text><Text style={styles.ruleValue}>Every 15 calendar days</Text></View>
-          <View style={styles.ruleLine}><Text style={styles.ruleLabel}>Late penalty</Text><Text style={styles.ruleValue}>2.5% of original principal / missed due date</Text></View>
-          <Text style={styles.ruleHint}>A late penalty is assessed once per overdue installment. It is not compounded.</Text>
+          <View style={styles.ruleItem}><Text style={styles.ruleLabel}>Monthly interest</Text><Text style={styles.ruleDescription}>5% of original principal</Text></View>
+          <View style={styles.ruleItem}><Text style={styles.ruleLabel}>Payment frequency</Text><Text style={styles.ruleDescription}>Every 15 calendar days</Text></View>
+          <View style={styles.ruleItem}><Text style={styles.ruleLabel}>Late penalty</Text><Text style={styles.ruleDescription}>2.5% of original principal for each missed due date</Text></View>
+          <Text style={styles.ruleHint}>Assessed once per overdue installment; penalties are not compounded.</Text>
         </View>
 
         {terms ? (
@@ -175,26 +190,6 @@ export function LoansScreen() {
         ))}
       </SectionCard>
 
-      <Modal visible={memberPickerVisible} transparent animationType="slide" onRequestClose={() => setMemberPickerVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.memberModal}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select member</Text>
-              <Pressable onPress={() => setMemberPickerVisible(false)}><Text style={styles.close}>Close</Text></Pressable>
-            </View>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              {members.map(member => (
-                <Pressable key={member.id} style={[styles.memberOption, member.id === memberId && styles.memberOptionSelected]}
-                  onPress={() => { setMemberId(member.id); setMemberPickerVisible(false); }}>
-                  <Text style={styles.memberOptionCode}>{member.member_code}</Text>
-                  <Text style={styles.memberOptionName}>{member.full_name}</Text>
-                  {member.reference_note ? <Text style={styles.dropdownHint}>{member.reference_note}</Text> : null}
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </ScreenLayout>
   );
 }
@@ -228,6 +223,8 @@ const styles = StyleSheet.create({
   ruleCard: { backgroundColor: theme.colors.accent, borderRadius: 12, padding: 12, gap: 9 },
   ruleTitle: { color: theme.colors.primaryDark, fontSize: 13, fontWeight: '800' },
   ruleLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
+  ruleItem: { gap: 3 },
+  ruleDescription: { color: theme.colors.text, fontSize: 12, fontWeight: '700', lineHeight: 17 },
   ruleLabel: { color: theme.colors.muted, fontSize: 11, flex: 1 },
   ruleValue: { color: theme.colors.text, fontSize: 11, fontWeight: '700', textAlign: 'right', flexShrink: 1 },
   ruleHint: { color: theme.colors.muted, fontSize: 10, lineHeight: 15 },
@@ -252,11 +249,7 @@ const styles = StyleSheet.create({
   meta: { color: theme.colors.muted, fontSize: 11 },
   status: { color: theme.colors.muted, fontSize: 10, fontWeight: '800' },
   activeStatus: { color: theme.colors.primary },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.42)', justifyContent: 'flex-end' },
-  memberModal: { backgroundColor: theme.colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, maxHeight: '75%', gap: 12 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  modalTitle: { color: theme.colors.text, fontSize: 17, fontWeight: '800' },
-  close: { color: theme.colors.primary, fontSize: 13, fontWeight: '800' },
+  memberDropdown: { borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, padding: 6, maxHeight: 220, backgroundColor: theme.colors.surface },
   memberOption: { padding: 13, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border, marginBottom: 8, gap: 3 },
   memberOptionSelected: { backgroundColor: theme.colors.accent, borderColor: theme.colors.primary },
   memberOptionCode: { color: theme.colors.primary, fontSize: 11, fontWeight: '800' },
