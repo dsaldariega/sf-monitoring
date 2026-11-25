@@ -49,7 +49,9 @@ export function MembersScreen() {
       await refreshMembers();
       showToast(`Member ${memberCode.trim()} added successfully.`, 'success');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save this member.');
+      const message = cause instanceof Error ? cause.message : 'Unable to save this member.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setSaving(false); }
   };
 
