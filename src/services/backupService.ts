@@ -1,11 +1,42 @@
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { getMonthlySummary } from './reportService';
 
 const DATABASE_NAME = 'sinking-fund-monitor.db';
 const DATABASE_VERSION = 5;
+const BACKUP_DIRECTORY = new Directory(Paths.document, 'backups');
+
+export type DatabaseBackupFile = {
+  name: string;
+  sizeBytes: number;
+  modifiedAt: number | null;
+};
+
+function ensureBackupDirectory(): void {
+  BACKUP_DIRECTORY.create({ idempotent: true, intermediates: true });
+}
+
+export function listDatabaseBackups(): DatabaseBackupFile[] {
+  ensureBackupDirectory();
+  return BACKUP_DIRECTORY
+    .list()
+    .filter(item => item instanceof File && item.name.toLowerCase().endsWith('.db'))
+    .map(item => {
+      const file = item as File;
+      return { name: file.name, sizeBytes: file.size, modifiedAt: file.modificationTime };
+    })
+    .sort((a, b) => (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0));
+}
+
+function getSavedBackupFile(name: string): File {
+  if (!/^sinking-fund-backup-\d{8}-\d{6}\.db$/.test(name)) {
+    throw new Error('Select a valid saved backup.');
+  }
+  ensureBackupDirectory();
+  return new File(BACKUP_DIRECTORY, name);
+}
 
 function timestampForFilename(date = new Date()): string {
   return [
@@ -33,7 +64,7 @@ async function shareFile(file: File, dialogTitle: string, mimeType: string): Pro
 export async function exportDatabaseBackup(db: SQLiteDatabase): Promise<void> {
   const bytes = await db.serializeAsync('main');
   const file = new File(
-    Paths.cache,
+    BACKUP_DIRECTORY,
     `sinking-fund-backup-${timestampForFilename()}.db`,
   );
   file.create({ overwrite: true });
@@ -41,11 +72,19 @@ export async function exportDatabaseBackup(db: SQLiteDatabase): Promise<void> {
   await shareFile(file, 'Save sinking fund database backup', 'application/octet-stream');
 }
 
-export async function restoreDatabaseBackup(db: SQLiteDatabase): Promise<boolean> {
-  const picked = await File.pickFileAsync();
-  if (picked.canceled) return false;
+export async function restoreDatabaseBackup(
+  db: SQLiteDatabase,
+  savedBackupName?: string,
+): Promise<boolean> {
+  const bytes = savedBackupName
+    ? await getSavedBackupFile(savedBackupName).bytes()
+    : await (async () => {
+        const picked = await File.pickFileAsync();
+        if (picked.canceled) return null;
+        return picked.result.bytes();
+      })();
 
-  const bytes = await picked.result.bytes();
+  if (!bytes) return false;
   if (bytes.byteLength < 16) {
     throw new Error('The selected file is not a valid SQLite database backup.');
   }

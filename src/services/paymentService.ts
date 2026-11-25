@@ -93,6 +93,167 @@ export async function listPaymentHistory(db: SQLiteDatabase): Promise<PaymentHis
   );
 }
 
+export async function deleteLoanPayment(
+  db: SQLiteDatabase,
+  paymentId: number,
+): Promise<void> {
+  if (!Number.isSafeInteger(paymentId) || paymentId <= 0) {
+    throw new Error('Select a valid payment.');
+  }
+
+  await db.withTransactionAsync(async () => {
+    const payment = await db.getFirstAsync<{
+      id: number;
+      loan_id: number;
+      amount_centavos: number;
+      penalty_allocated_centavos: number;
+      paid_on: string;
+    }>(
+      `SELECT id, loan_id, amount_centavos, penalty_allocated_centavos, paid_on
+       FROM payments
+       WHERE id = ?`,
+      paymentId,
+    );
+    if (!payment) throw new Error('Payment record was not found.');
+
+    const installments = await db.getAllAsync<{
+      id: number;
+      scheduled_amount_centavos: number;
+      penalty_amount_centavos: number;
+    }>(
+      `SELECT id, scheduled_amount_centavos, penalty_amount_centavos
+       FROM loan_installments
+       WHERE loan_id = ?
+       ORDER BY due_date ASC, installment_number ASC`,
+      payment.loan_id,
+    );
+    if (installments.length === 0) {
+      throw new Error('The loan has no installment records to rebuild.');
+    }
+
+    await db.runAsync(
+      `UPDATE loan_installments
+       SET paid_amount_centavos = 0,
+           penalty_paid_centavos = 0
+       WHERE loan_id = ?`,
+      payment.loan_id,
+    );
+
+    await db.runAsync(
+      `DELETE FROM fund_transactions
+       WHERE transaction_type = 'loan_collection'
+         AND reference_type = 'payment'
+         AND reference_id = ?`,
+      paymentId,
+    );
+
+    await db.runAsync('DELETE FROM payments WHERE id = ?', paymentId);
+
+    const remainingPayments = await db.getAllAsync<{
+      id: number;
+      amount_centavos: number;
+      penalty_allocated_centavos: number;
+    }>(
+      `SELECT id, amount_centavos, penalty_allocated_centavos
+       FROM payments
+       WHERE loan_id = ?
+       ORDER BY paid_on ASC, id ASC`,
+      payment.loan_id,
+    );
+
+    for (const historicalPayment of remainingPayments) {
+      let remainingScheduled =
+        historicalPayment.amount_centavos - historicalPayment.penalty_allocated_centavos;
+      let remainingPenalty = historicalPayment.penalty_allocated_centavos;
+
+      if (remainingScheduled < 0 || remainingPenalty < 0) {
+        throw new Error('Payment history contains an invalid allocation.');
+      }
+
+      for (const installment of installments) {
+        if (remainingPenalty <= 0) break;
+        const current = await db.getFirstAsync<{ penalty_paid_centavos: number }>(
+          'SELECT penalty_paid_centavos FROM loan_installments WHERE id = ?',
+          installment.id,
+        );
+        const penaltyDue =
+          installment.penalty_amount_centavos - (current?.penalty_paid_centavos ?? 0);
+        const penaltyPayment = Math.min(remainingPenalty, Math.max(0, penaltyDue));
+        if (penaltyPayment > 0) {
+          await db.runAsync(
+            `UPDATE loan_installments
+             SET penalty_paid_centavos = penalty_paid_centavos + ?
+             WHERE id = ?`,
+            penaltyPayment,
+            installment.id,
+          );
+          remainingPenalty -= penaltyPayment;
+        }
+      }
+
+      if (remainingPenalty > 0) {
+        throw new Error('Payment history could not be rebuilt safely.');
+      }
+
+      for (const installment of installments) {
+        if (remainingScheduled <= 0) break;
+        const current = await db.getFirstAsync<{ paid_amount_centavos: number }>(
+          'SELECT paid_amount_centavos FROM loan_installments WHERE id = ?',
+          installment.id,
+        );
+        const scheduledDue =
+          installment.scheduled_amount_centavos - (current?.paid_amount_centavos ?? 0);
+        const scheduledPayment = Math.min(remainingScheduled, Math.max(0, scheduledDue));
+        if (scheduledPayment > 0) {
+          await db.runAsync(
+            `UPDATE loan_installments
+             SET paid_amount_centavos = paid_amount_centavos + ?
+             WHERE id = ?`,
+            scheduledPayment,
+            installment.id,
+          );
+          remainingScheduled -= scheduledPayment;
+        }
+      }
+
+      if (remainingScheduled > 0) {
+        throw new Error('Payment history exceeds the loan schedule.');
+      }
+    }
+
+    const unpaid = await db.getFirstAsync<{ count: number }>(
+      `SELECT COUNT(*) AS count
+       FROM loan_installments
+       WHERE loan_id = ?
+         AND (
+           paid_amount_centavos < scheduled_amount_centavos
+           OR penalty_paid_centavos < penalty_amount_centavos
+         )`,
+      payment.loan_id,
+    );
+
+    await db.runAsync(
+      `UPDATE loans
+       SET status = ?,
+           updated_at = datetime('now')
+       WHERE id = ?`,
+      (unpaid?.count ?? 0) === 0 ? 'paid' : 'active',
+      payment.loan_id,
+    );
+
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('deleted', 'payment', NULL, ?)`,
+      JSON.stringify({
+        deletedPaymentId: paymentId,
+        loanId: payment.loan_id,
+        amountCentavos: payment.amount_centavos,
+        paidOn: payment.paid_on,
+      }),
+    );
+  });
+}
+
 export async function recordLoanPayment(
   db: SQLiteDatabase,
   input: { loanId: number; amountCentavos: number; paidOn: string; notes?: string }

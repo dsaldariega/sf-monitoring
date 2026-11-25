@@ -9,7 +9,7 @@ import { SectionCard } from '../components/SectionCard';
 import { theme } from '../constants/theme';
 import { useToast } from '../components/ToastProvider';
 import { assessOverdueInstallments } from '../services/loanService';
-import { listLoansForPayment, listPaymentHistory, recordLoanPayment, type PaymentHistoryItem, type PaymentLoanOption } from '../services/paymentService';
+import { listLoansForPayment, listPaymentHistory, recordLoanPayment, deleteLoanPayment, type PaymentHistoryItem, type PaymentLoanOption } from '../services/paymentService';
 import { formatCentavos, parsePesoAmount } from '../utils/money';
 
 const now = new Date();
@@ -28,6 +28,8 @@ export function PaymentsScreen() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<PaymentHistoryItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const selectedLoan = loans.find(loan => loan.id === loanId) ?? null;
   const amountCentavos = parsePesoAmount(amount);
@@ -45,6 +47,25 @@ export function PaymentsScreen() {
 
   const openPaymentModal = () => {
     setError(''); setDropdownVisible(false); setAmount(''); setNotes(''); setPaidOn(today); setFormVisible(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setError('');
+    try {
+      const label = `Member ${deleteTarget.member_code} · ${deleteTarget.alias || 'No alias'}`;
+      await deleteLoanPayment(db, deleteTarget.id);
+      setDeleteTarget(null);
+      await refreshData();
+      showToast(`${label} payment deleted successfully.`, 'destructive');
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Unable to delete this payment.';
+      setError(message);
+      showToast(message, 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleSave = async () => {
@@ -85,6 +106,9 @@ const message = cause instanceof Error ? cause.message : 'Unable to record this 
             <Text style={styles.dropdownHint}>{payment.member_name || 'Name not provided'} · {payment.paid_on}</Text>
             {payment.penalty_allocated_centavos > 0 ? <Text style={styles.penaltyNote}>Includes {formatCentavos(payment.penalty_allocated_centavos)} penalty settlement</Text> : null}
             {payment.notes ? <Text style={styles.dropdownHint}>{payment.notes}</Text> : null}
+            <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(payment)}>
+              <Text style={styles.deleteButtonText}>Delete payment</Text>
+            </Pressable>
           </View>
         ))}
       </SectionCard>
@@ -130,6 +154,17 @@ const message = cause instanceof Error ? cause.message : 'Unable to record this 
         <Field label="Notes (optional)" value={notes} onChangeText={setNotes} placeholder="Optional payment note" />
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </AppModal>
+
+      <ConfirmModal
+        visible={Boolean(deleteTarget)}
+        title="Delete payment?"
+        message={deleteTarget ? `Permanently delete the ${formatCentavos(deleteTarget.amount_centavos)} payment from Member ${deleteTarget.member_code}? The linked Fund loan collection will also be removed, and the loan payment history will be rebuilt. This cannot be undone.` : ''}
+        confirmLabel="Delete payment"
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setDeleteTarget(null)}
+        busy={deleting}
+        destructive
+      />
     </ScreenLayout>
   );
 }
@@ -167,6 +202,8 @@ const styles = StyleSheet.create({
   primaryButton: { minHeight: 46, borderRadius: 12, backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   historyRow: { borderTopWidth: 1, borderTopColor: theme.colors.border, paddingVertical: 12, gap: 4 },
+  deleteButton: { alignSelf: 'flex-start', marginTop: 5, borderRadius: 9, backgroundColor: '#FCE8E6', paddingHorizontal: 11, paddingVertical: 8 },
+  deleteButtonText: { color: '#B42318', fontSize: 11, fontWeight: '800' },
   historyHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   historyAmount: { color: theme.colors.primary, fontSize: 14, fontWeight: '900' },
   penaltyNote: { color: '#B42318', fontSize: 11, fontWeight: '700' },
