@@ -79,7 +79,9 @@ export function FundScreen() {
       await refresh();
       showToast(`${movementLabel} recorded successfully.`, movement === 'other_out' ? 'warning' : 'success');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save this Fund record.');
+      const message = cause instanceof Error ? cause.message : 'Unable to save this Fund record.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setSaving(false); }
   };
 
