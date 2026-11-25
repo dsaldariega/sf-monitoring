@@ -105,7 +105,7 @@ export function LoansScreen() {
       await deleteLoan(db, deleteTarget.id);
       setDeleteTarget(null);
       await refreshData();
-      showToast(`${deletedLabel} loan deleted successfully.`, 'error');
+      showToast(`${deletedLabel} loan deleted successfully.`, 'destructive');
     } catch (cause) {
       setDeleteTarget(null);
 const message = cause instanceof Error ? cause.message : 'Unable to delete this loan.';
