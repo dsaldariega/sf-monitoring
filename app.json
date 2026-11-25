@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "sf-monitoring-app",
+    "name": "SF Monitoring",
     "slug": "sf-monitoring-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,7 +20,12 @@
       "package": "com.dsaldariega.sfmonitoring"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "SF Monitoring",
+      "shortName": "SF Monitor",
+      "themeColor": "#B42318",
+      "backgroundColor": "#FCFAF9",
+      "display": "standalone"
     },
     "plugins": [
       "expo-sqlite",
