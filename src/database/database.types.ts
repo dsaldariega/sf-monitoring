@@ -35,8 +35,21 @@ export type LoanRecord = {
   allocation_method: PaymentAllocationMethod;
   status: LoanStatus;
   remarks: string | null;
+  alias: string | null;
+  term_months: number;
   created_at: string;
   updated_at: string;
+};
+
+export type LoanInstallmentRecord = {
+  id: number;
+  loan_id: number;
+  installment_number: number;
+  due_date: string;
+  scheduled_amount_centavos: number;
+  penalty_amount_centavos: number;
+  paid_amount_centavos: number;
+  penalty_assessed_at: string | null;
 };
 
 export type MonthlyMonitoringRecord = {

@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export const DATABASE_VERSION = 1;
+export const DATABASE_VERSION = 2;
 
 type Migration = {
   version: number;
@@ -125,6 +125,28 @@ const migrations: Migration[] = [
       );
 
       CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
+    `,
+  },
+  {
+    version: 2,
+    sql: `
+      ALTER TABLE loans ADD COLUMN alias TEXT;
+      ALTER TABLE loans ADD COLUMN term_months INTEGER NOT NULL DEFAULT 1 CHECK (term_months > 0);
+      CREATE TABLE loan_installments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        loan_id INTEGER NOT NULL REFERENCES loans(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+        installment_number INTEGER NOT NULL CHECK (installment_number > 0),
+        due_date TEXT NOT NULL,
+        scheduled_amount_centavos INTEGER NOT NULL CHECK (scheduled_amount_centavos >= 0),
+        penalty_amount_centavos INTEGER NOT NULL DEFAULT 0 CHECK (penalty_amount_centavos >= 0),
+        paid_amount_centavos INTEGER NOT NULL DEFAULT 0 CHECK (paid_amount_centavos >= 0),
+        penalty_assessed_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (loan_id, installment_number),
+        UNIQUE (loan_id, due_date)
+      );
+      CREATE INDEX idx_loan_installments_due_date ON loan_installments(due_date);
+      CREATE INDEX idx_loan_installments_loan_id ON loan_installments(loan_id);
     `,
   },
 ];
