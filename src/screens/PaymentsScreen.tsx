@@ -7,6 +7,7 @@ import { DatePickerField } from '../components/DatePickerField';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { SectionCard } from '../components/SectionCard';
 import { theme } from '../constants/theme';
+import { useToast } from '../components/ToastProvider';
 import { assessOverdueInstallments } from '../services/loanService';
 import { listLoansForPayment, listPaymentHistory, recordLoanPayment, type PaymentHistoryItem, type PaymentLoanOption } from '../services/paymentService';
 import { formatCentavos, parsePesoAmount } from '../utils/money';
@@ -16,6 +17,7 @@ const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0'
 
 export function PaymentsScreen() {
   const db = useSQLiteContext();
+  const { showToast } = useToast();
   const [loans, setLoans] = useState<PaymentLoanOption[]>([]);
   const [history, setHistory] = useState<PaymentHistoryItem[]>([]);
   const [loanId, setLoanId] = useState<number | null>(null);
@@ -53,8 +55,10 @@ export function PaymentsScreen() {
     setSaving(true);
     try {
       await recordLoanPayment(db, { loanId: selectedLoan.id, amountCentavos, paidOn, notes });
+      const paymentLabel = `Member ${selectedLoan.member_code} · ${selectedLoan.alias || 'No alias'}`;
       setFormVisible(false);
       await refreshData();
+      showToast(`Payment for ${paymentLabel} recorded successfully.`, 'success');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to record this payment.');
     } finally { setSaving(false); }
