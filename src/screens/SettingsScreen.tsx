@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { SectionCard } from '../components/SectionCard';
 import { theme } from '../constants/theme';
+import { useToast } from '../components/ToastProvider';
 import { exportDatabaseBackup, restoreDatabaseBackup } from '../services/backupService';
 
 export function SettingsScreen() {
   const db = useSQLiteContext();
+  const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [backupConfirmVisible, setBackupConfirmVisible] = useState(false);
@@ -20,9 +22,11 @@ export function SettingsScreen() {
     setBusy(true);
     try {
       await exportDatabaseBackup(db);
-      Alert.alert('Backup ready', 'The database backup was prepared. Use the Android share sheet to save it somewhere secure.');
+      showToast('Database backup is ready to save securely.', 'success');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to create the database backup.');
+      const message = cause instanceof Error ? cause.message : 'Unable to create the database backup.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setBusy(false); }
   };
 
@@ -33,10 +37,12 @@ export function SettingsScreen() {
     try {
       const restored = await restoreDatabaseBackup(db);
       if (restored) {
-        Alert.alert('Database restored', 'The selected backup is now the active local database.');
+        showToast('Database restored successfully. The selected backup is now active.', 'success');
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to restore the selected backup.');
+      const message = cause instanceof Error ? cause.message : 'Unable to restore the selected backup.';
+      setError(message);
+      showToast(message, 'error');
     } finally { setBusy(false); }
   };
 
