@@ -93,3 +93,40 @@ export async function setMemberActive(
     );
   });
 }
+
+
+export async function updateMemberHeads(
+  db: SQLiteDatabase,
+  memberId: number,
+  heads: number,
+): Promise<void> {
+  if (!Number.isSafeInteger(memberId) || memberId <= 0) {
+    throw new Error('Select a valid member.');
+  }
+  if (!Number.isSafeInteger(heads) || heads < 1 || heads > 999) {
+    throw new Error('Heads must be a whole number from 1 to 999.');
+  }
+
+  await db.withTransactionAsync(async () => {
+    const member = await db.getFirstAsync<{ id: number }>(
+      'SELECT id FROM members WHERE id = ?',
+      memberId,
+    );
+    if (!member) throw new Error('Member record was not found.');
+
+    await db.runAsync(
+      `UPDATE members
+       SET heads = ?, updated_at = datetime('now')
+       WHERE id = ?`,
+      heads,
+      memberId,
+    );
+
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('updated', 'member', ?, ?)`,
+      memberId,
+      JSON.stringify({ heads }),
+    );
+  });
+}
