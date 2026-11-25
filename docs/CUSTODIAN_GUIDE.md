@@ -1,10 +1,12 @@
 # SF Monitoring
 ## Custodian User Guide
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Platform:** Android / Web  
 **Installation name:** **SF Monitoring**  
 **Data storage:** Local device only (offline-first)
+
+**Latest UI:** Record lists use tap-to-view actions to keep the screen compact.
 
 ---
 
@@ -78,12 +80,15 @@ The name may be left blank. The application displays **Name not provided** when 
 
 ### Delete a member
 
-Members now use **Delete** instead of Deactivate.
+Members now use **Delete** instead of Deactivate. The member list stays compact by hiding the destructive action until you open the member.
 
 1. Find the member.
-2. Tap **Delete**.
-3. Review the warning.
-4. Tap **Delete member** only if you are certain.
+2. Tap the member row to **view actions**.
+3. Tap **Delete member**.
+4. Review the warning.
+5. Tap **Delete member** only if you are certain.
+
+Tap the row again to collapse it.
 
 Deletion is permanent.
 
@@ -173,6 +178,8 @@ The penalty is assessed once per missed due date and is not compounded.
 ### Record a payment
 
 Payment recording now opens in a **modal form**.
+
+The recent payment history also keeps Delete hidden until a payment is opened. Tap a payment to view its details and **Delete payment** action. Tap again to collapse it.
 
 1. Open **Payments**.
 2. Tap **+ Record payment**.
@@ -277,6 +284,18 @@ The application applies:
 
 The remaining ₱100 becomes advance credit for the following week.
 
+### Delete a weekly collection
+
+Recent collections keep the list compact by hiding Delete until the collection is opened.
+
+1. Find the collection.
+2. Tap the collection row to **view actions**.
+3. Tap **Delete collection**.
+4. Review the confirmation.
+5. Confirm the deletion if you are certain.
+
+Deleting a collection also removes its weekly/advance allocation and linked Fund contribution.
+
 ### Weekly status
 
 The Sinking Fund screen shows:
@@ -332,6 +351,18 @@ They are separate from the weekly Sinking Fund collection.
 3. Review the monthly figures.
 4. Review the individual loan activity.
 
+### Delete a finalized report
+
+Finalized monthly reports are saved snapshots. They can be deleted without changing the underlying live loan or payment records.
+
+1. Open **Loan Reports**.
+2. Tap a finalized report to **view its saved snapshot and actions**.
+3. Tap **Delete finalized report**.
+4. Review the destructive confirmation.
+5. Confirm if you are certain.
+
+The delete action is hidden until the report is opened, so the report list stays compact.
+
 ### Finalize a report
 
 When the month has been reviewed and is complete:
@@ -384,6 +415,19 @@ The application currently manages one fund:
 
 Weekly Sinking Fund collections, loan releases, and loan collections are recorded automatically from their respective workflows.
 
+### Fund ledger actions
+
+Fund records also use tap-to-view actions.
+
+- **Manual Fund records** can be deleted after opening the record.
+- **Automatically recorded Fund entries** cannot be deleted directly from Fund.
+- When an automatic entry is opened, the app explains which source screen manages it:
+  - Sinking Fund contribution → manage from **Sinking Fund**
+  - Loan release → manage from **Loans**
+  - Loan collection → manage from **Payments**
+
+This keeps the Fund ledger safe from accidentally deleting only one side of a linked financial transaction.
+
 ### Fund balance
 
 The Fund screen shows:
@@ -408,11 +452,16 @@ Loans now use **Delete loan** instead of Archive.
 
 ### Delete a loan
 
+The loan list keeps Delete hidden until the loan is opened.
+
 1. Open **Loans**.
 2. Find the loan.
-3. Tap **Delete loan**.
-4. Carefully read the confirmation.
-5. Tap **Delete loan** only when you are certain.
+3. Tap the loan row to **view actions**.
+4. Tap **Delete loan**.
+5. Carefully read the confirmation.
+6. Tap **Delete loan** only when you are certain.
+
+Tap the row again to collapse it.
 
 Deleting a loan is permanent.
 
