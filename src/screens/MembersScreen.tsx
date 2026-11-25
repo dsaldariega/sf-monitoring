@@ -63,7 +63,7 @@ export function MembersScreen() {
       await deleteMember(db, deleteTarget.id);
       setDeleteTarget(null);
       await refreshMembers();
-      showToast(`Member ${deletedCode} deleted successfully.`, 'error');
+      showToast(`Member ${deletedCode} deleted successfully.`, 'destructive');
     } catch (cause) {
       setDeleteTarget(null);
 const message = cause instanceof Error ? cause.message : 'Unable to delete this member.';
