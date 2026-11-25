@@ -5,7 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { getMonthlySummary } from './reportService';
 
 const DATABASE_NAME = 'sinking-fund-monitor.db';
-const DATABASE_VERSION = 4;
+const DATABASE_VERSION = 5;
 
 function timestampForFilename(date = new Date()): string {
   return [
@@ -63,7 +63,7 @@ export async function restoreDatabaseBackup(db: SQLiteDatabase): Promise<void> {
     }
 
     const tables = await importedDb.getAllAsync<{ name: string }>(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('members', 'loans', 'loan_installments', 'payments', 'fund_transactions', 'monthly_reports', 'audit_logs')",
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('members', 'loans', 'loan_installments', 'payments', 'fund_transactions', 'monthly_reports', 'sinking_fund_weeks', 'sinking_fund_payments', 'sinking_fund_allocations', 'audit_logs')",
     );
     const requiredTables = [
       'members',
@@ -72,6 +72,9 @@ export async function restoreDatabaseBackup(db: SQLiteDatabase): Promise<void> {
       'payments',
       'fund_transactions',
       'monthly_reports',
+      'sinking_fund_weeks',
+      'sinking_fund_payments',
+      'sinking_fund_allocations',
       'audit_logs',
     ];
     const found = new Set(tables.map(table => table.name));
@@ -129,8 +132,8 @@ export async function exportMonthlyReportCsv(
     ].map(csvEscape).join(','));
   }
 
-  const file = new File(Paths.cache, `sinking-fund-report-${periodMonth}.csv`);
+  const file = new File(Paths.cache, `loan-collection-report-${periodMonth}.csv`);
   file.create({ overwrite: true });
   await file.write(rows.join('\n'));
-  await shareFile(file, 'Export monthly report', 'text/csv');
+  await shareFile(file, 'Export loan collection report', 'text/csv');
 }
