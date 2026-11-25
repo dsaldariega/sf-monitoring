@@ -254,3 +254,52 @@ export async function restoreLoan(db: SQLiteDatabase, loanId: number): Promise<v
     );
   });
 }
+
+
+export async function deleteLoan(db: SQLiteDatabase, loanId: number): Promise<void> {
+  if (!Number.isSafeInteger(loanId) || loanId <= 0) throw new Error('Select a valid loan.');
+
+  await db.withTransactionAsync(async () => {
+    const loan = await db.getFirstAsync<{ id: number; member_id: number; alias: string | null }>(
+      'SELECT id, member_id, alias FROM loans WHERE id = ?', loanId
+    );
+    if (!loan) throw new Error('Loan record was not found.');
+
+    const payments = await db.getAllAsync<{ id: number }>(
+      'SELECT id FROM payments WHERE loan_id = ?', loanId
+    );
+    const paymentIds = payments.map(item => item.id);
+
+    if (paymentIds.length > 0) {
+      await db.runAsync(
+        `DELETE FROM fund_transactions
+         WHERE transaction_type = 'loan_collection'
+           AND reference_type = 'payment'
+           AND reference_id IN (${paymentIds.map(() => '?').join(',')})`,
+        ...paymentIds
+      );
+    }
+
+    await db.runAsync('DELETE FROM monthly_monitoring WHERE loan_id = ?', loanId);
+    await db.runAsync('DELETE FROM loan_installments WHERE loan_id = ?', loanId);
+    await db.runAsync('DELETE FROM payments WHERE loan_id = ?', loanId);
+    await db.runAsync(
+      `DELETE FROM fund_transactions
+       WHERE (transaction_type = 'loan_release' AND reference_type = 'loan' AND reference_id = ?)
+          OR (transaction_type = 'loan_collection' AND reference_type = 'payment' AND reference_id = ?)`,
+      loanId, loanId
+    );
+    await db.runAsync('DELETE FROM loans WHERE id = ?', loanId);
+
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('deleted', 'loan', NULL, ?)`,
+      JSON.stringify({
+        deletedLoanId: loanId,
+        memberId: loan.member_id,
+        alias: loan.alias,
+        deletedPaymentCount: paymentIds.length,
+      })
+    );
+  });
+}
