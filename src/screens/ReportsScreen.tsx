@@ -307,66 +307,93 @@ export function ReportsScreen() {
 
       <SectionCard
         title={`Finalized reports · ${reports.length}`}
-        subtitle="Saved snapshots are kept separately from live records."
+        subtitle="Saved snapshots are kept separately from live records. Tap a report to view its snapshot and available actions."
       >
         {reports.length === 0 ? (
           <Text style={styles.empty}>No finalized reports yet.</Text>
         ) : (
-          reports.map((report) => (
-            <Pressable
-              key={report.id}
-              style={[
-                styles.historyItem,
-                report.id === selectedReportId && styles.historySelected,
-              ]}
-              onPress={() =>
-                setSelectedReportId((current) =>
-                  current === report.id ? null : report.id,
-                )
-              }
-            >
-              <View style={styles.loanHeading}>
-                <Text style={styles.loanName}>
-                  {displayMonth(report.period_month)}
-                </Text>
-                <Text style={styles.loanAmount}>
-                  {formatCentavos(report.total_collected_centavos)}
-                </Text>
-              </View>
-              <Text style={styles.loanMeta}>
-                Finalized {report.finalized_at}
-              </Text>
-              {report.id === selectedReportId ? (
-                <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(report)}>
-                  <Text style={styles.deleteButtonText}>Delete finalized report</Text>
-                </Pressable>
-              ) : null}
-              {report.id === selectedReportId && snapshot ? (
-                <View style={styles.snapshot}>
-                  <Text style={styles.metricLabel}>
-                    Saved principal released:{" "}
-                    {formatCentavos(snapshot.metrics.principalReleasedCentavos)}
-                  </Text>
-                  <Text style={styles.metricLabel}>
-                    Saved installment target:{" "}
-                    {formatCentavos(snapshot.metrics.installmentTargetCentavos)}
-                  </Text>
-                  <Text style={styles.metricLabel}>
-                    Saved portfolio outstanding:{" "}
-                    {formatCentavos(
-                      snapshot.metrics.portfolioOutstandingCentavos,
-                    )}
-                  </Text>
-                  {snapshot.loans.map((line) => (
-                    <Text key={line.loanId} style={styles.snapshotLoan}>
-                      {line.memberCode} · {line.alias || line.memberName} —{" "}
-                      {formatCentavos(line.collectedCentavos)} collected
+          reports.map((report) => {
+            const isSelected = report.id === selectedReportId;
+            return (
+              <View
+                key={report.id}
+                style={[styles.historyItem, isSelected && styles.historySelected]}
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() =>
+                    setSelectedReportId((current) =>
+                      current === report.id ? null : report.id,
+                    )
+                  }
+                >
+                  <View style={styles.loanHeading}>
+                    <Text style={styles.loanName}>
+                      {displayMonth(report.period_month)}
                     </Text>
-                  ))}
-                </View>
-              ) : null}
-            </Pressable>
-          ))
+                    <Text style={styles.loanAmount}>
+                      {formatCentavos(report.total_collected_centavos)}
+                    </Text>
+                  </View>
+                  <Text style={styles.loanMeta}>
+                    Finalized {report.finalized_at}
+                  </Text>
+                  <Text style={styles.expandHint}>
+                    {isSelected
+                      ? "Tap to collapse"
+                      : "Tap to view saved snapshot and actions"}
+                  </Text>
+                </Pressable>
+
+                {isSelected && snapshot ? (
+                  <View style={styles.snapshot}>
+                    <Text style={styles.metricLabel}>
+                      Saved principal released:{" "}
+                      {formatCentavos(snapshot.metrics.principalReleasedCentavos)}
+                    </Text>
+                    <Text style={styles.metricLabel}>
+                      Saved installment target:{" "}
+                      {formatCentavos(snapshot.metrics.installmentTargetCentavos)}
+                    </Text>
+                    <Text style={styles.metricLabel}>
+                      Saved portfolio outstanding:{" "}
+                      {formatCentavos(
+                        snapshot.metrics.portfolioOutstandingCentavos,
+                      )}
+                    </Text>
+                    {snapshot.loans.map((line) => (
+                      <Text key={line.loanId} style={styles.snapshotLoan}>
+                        {line.memberCode} · {line.alias || line.memberName} —{" "}
+                        {formatCentavos(line.collectedCentavos)} collected
+                      </Text>
+                    ))}
+                    <Pressable
+                      style={styles.deleteButton}
+                      onPress={() => setDeleteTarget(report)}
+                    >
+                      <Text style={styles.deleteButtonText}>
+                        Delete finalized report
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : isSelected ? (
+                  <View style={styles.snapshot}>
+                    <Text style={styles.error}>
+                      Unable to read this saved report snapshot.
+                    </Text>
+                    <Pressable
+                      style={styles.deleteButton}
+                      onPress={() => setDeleteTarget(report)}
+                    >
+                      <Text style={styles.deleteButtonText}>
+                        Delete finalized report
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
+            );
+          })
         )}
       </SectionCard>
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -502,7 +529,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 10,
   },
-  snapshot: { gap: 7, paddingTop: 7 },
+  snapshot: { gap: 7, paddingTop: 7 },\n  expandHint: { color: theme.colors.primary, fontSize: 10, fontWeight: "700", marginTop: 2 },
   deleteButton: {
     minHeight: 40,
     borderRadius: 10,

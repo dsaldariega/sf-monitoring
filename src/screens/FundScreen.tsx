@@ -136,7 +136,11 @@ export function FundScreen() {
               <Pressable style={styles.deleteButton} onPress={() => setDeleteTarget(item)}>
                 <Text style={styles.deleteButtonText}>Delete Fund record</Text>
               </Pressable>
-            ) : null}
+            ) : (
+              <Text style={styles.linkedRecord}>
+                Linked record — delete it from its source screen.
+              </Text>
+            )}
           </View>
         ))}
       </SectionCard>
@@ -211,5 +215,5 @@ const styles = StyleSheet.create({
   outflow: { color: '#B42318' },
   meta: { color: theme.colors.muted, fontSize: 10, lineHeight: 15 },
   deleteButton: { alignSelf: 'flex-start', marginTop: 7, borderRadius: 9, backgroundColor: '#FCE8E6', paddingHorizontal: 11, paddingVertical: 8 },
-  deleteButtonText: { color: '#B42318', fontSize: 10, fontWeight: '800' },
+  deleteButtonText: { color: '#B42318', fontSize: 10, fontWeight: '800' },\n  linkedRecord: { color: theme.colors.muted, fontSize: 10, fontWeight: '700', lineHeight: 15, marginTop: 7 },
 });
