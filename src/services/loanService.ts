@@ -54,7 +54,8 @@ export function calculateLoanTerms(principalCentavos: number, termMonths: number
   const totalPayableCentavos = principalCentavos + totalInterestCentavos;
   const installmentCount = termMonths * 2;
   const baseInstallment = Math.floor(totalPayableCentavos / installmentCount);
-  const penaltyCentavos = Math.round((principalCentavos * LATE_PENALTY_BASIS_POINTS) / 10000);\n  return { totalInterestCentavos, totalPayableCentavos, installmentCount, baseInstallment, penaltyCentavos };
+  const penaltyCentavos = Math.round((principalCentavos * LATE_PENALTY_BASIS_POINTS) / 10000);
+  return { totalInterestCentavos, totalPayableCentavos, installmentCount, baseInstallment, penaltyCentavos };
 }
 
 export function buildInstallmentSchedule(
