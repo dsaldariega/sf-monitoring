@@ -6,6 +6,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import { ScreenLayout } from "../components/ScreenLayout";
 import { SectionCard } from "../components/SectionCard";
 import { theme } from "../constants/theme";
+import { useToast } from "../components/ToastProvider";
 import { exportMonthlyReportCsv } from "../services/backupService";
 import {
   currentPeriodMonth,
@@ -33,6 +34,7 @@ function displayMonth(period: string): string {
 
 export function ReportsScreen() {
   const db = useSQLiteContext();
+  const { showToast } = useToast();
   const [period, setPeriod] = useState(currentPeriodMonth());
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [reports, setReports] = useState<MonthlyReportRecord[]>([]);
@@ -104,6 +106,7 @@ export function ReportsScreen() {
     try {
       await exportMonthlyReportCsv(db, period);
       setExportModalVisible(false);
+      showToast(`${displayMonth(period)} CSV export is ready to share.`, 'success');
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -129,10 +132,7 @@ export function ReportsScreen() {
               await finalizeMonthlyReport(db, period);
               setSelectedReportId(null);
               await refresh();
-              Alert.alert(
-                "Report finalized",
-                "The monthly loan report snapshot has been saved on this device.",
-              );
+              showToast(`${displayMonth(period)} loan report finalized successfully.`, 'success');
             } catch (cause) {
               setError(
                 cause instanceof Error
