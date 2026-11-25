@@ -5,7 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { SectionCard } from '../components/SectionCard';
 import type { MemberRecord } from '../database/database.types';
-import { createMember, listMembers, setMemberActive } from '../services/memberService';
+import { createMember, listMembers, setMemberActive, updateMemberHeads } from '../services/memberService';
 import { theme } from '../constants/theme';
 
 export function MembersScreen() {
@@ -17,6 +17,8 @@ export function MembersScreen() {
   const [contactNumber, setContactNumber] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editingMemberId, setEditingMemberId] = useState<number | null>(null);
+  const [editingHeads, setEditingHeads] = useState('');
 
   const refreshMembers = useCallback(async () => {
     try {
@@ -47,6 +49,24 @@ export function MembersScreen() {
       setError(cause instanceof Error ? cause.message : 'Unable to save this member.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpdateHeads = async (memberId: number) => {
+    setError('');
+    const nextHeads = Number(editingHeads);
+    if (!Number.isSafeInteger(nextHeads) || nextHeads < 1 || nextHeads > 999) {
+      setError('Heads must be a whole number from 1 to 999.');
+      return;
+    }
+
+    try {
+      await updateMemberHeads(db, memberId, nextHeads);
+      setEditingMemberId(null);
+      setEditingHeads('');
+      await refreshMembers();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to update member heads.');
     }
   };
 
@@ -125,16 +145,46 @@ export function MembersScreen() {
               <Text style={styles.meta}>{member.heads} heads · {formatWeeklyDue(member.heads)}</Text>
               {member.contact_number ? <Text style={styles.meta}>{member.contact_number}</Text> : null}
               {member.is_active !== 1 ? <Text style={styles.inactive}>Inactive</Text> : null}
+              {editingMemberId === member.id ? (
+                <View style={styles.editHeadsRow}>
+                  <TextInput
+                    value={editingHeads}
+                    onChangeText={setEditingHeads}
+                    keyboardType="number-pad"
+                    style={styles.editHeadsInput}
+                    placeholder="Heads"
+                    placeholderTextColor={theme.colors.muted}
+                  />
+                  <Pressable style={styles.saveHeadsButton} onPress={() => void handleUpdateHeads(member.id)}>
+                    <Text style={styles.saveHeadsText}>Save</Text>
+                  </Pressable>
+                  <Pressable style={styles.cancelHeadsButton} onPress={() => setEditingMemberId(null)}>
+                    <Text style={styles.cancelHeadsText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => handleToggleActive(member)}
-              style={[styles.smallButton, member.is_active === 1 && styles.deactivateButton]}
-            >
-              <Text style={[styles.smallButtonText, member.is_active === 1 && styles.deactivateText]}>
-                {member.is_active === 1 ? 'Deactivate' : 'Reactivate'}
-              </Text>
-            </Pressable>
+            <View style={styles.memberActions}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  setEditingMemberId(member.id);
+                  setEditingHeads(String(member.heads));
+                }}
+                style={styles.smallButton}
+              >
+                <Text style={styles.smallButtonText}>Edit heads</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => handleToggleActive(member)}
+                style={[styles.smallButton, member.is_active === 1 && styles.deactivateButton]}
+              >
+                <Text style={[styles.smallButtonText, member.is_active === 1 && styles.deactivateText]}>
+                  {member.is_active === 1 ? 'Deactivate' : 'Reactivate'}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         ))}
       </SectionCard>
@@ -195,6 +245,13 @@ const styles = StyleSheet.create({
   memberName: { color: theme.colors.text, fontSize: 14, fontWeight: '700' },
   meta: { color: theme.colors.muted, fontSize: 11 },
   inactive: { color: theme.colors.warning, fontSize: 11, fontWeight: '700' },
+  memberActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  editHeadsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
+  editHeadsInput: { width: 70, minHeight: 36, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 9, paddingHorizontal: 8, color: theme.colors.text, backgroundColor: theme.colors.background, fontSize: 12 },
+  saveHeadsButton: { borderRadius: 9, backgroundColor: theme.colors.primary, paddingHorizontal: 9, paddingVertical: 8 },
+  saveHeadsText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
+  cancelHeadsButton: { borderRadius: 9, backgroundColor: theme.colors.accent, paddingHorizontal: 9, paddingVertical: 8 },
+  cancelHeadsText: { color: theme.colors.primary, fontSize: 10, fontWeight: '800' },
   smallButton: { borderRadius: 9, backgroundColor: theme.colors.accent, paddingHorizontal: 10, paddingVertical: 8 },
   smallButtonText: { color: theme.colors.primary, fontSize: 11, fontWeight: '700' },
   deactivateButton: { backgroundColor: '#FCE8E6' },
