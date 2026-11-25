@@ -86,7 +86,8 @@ export async function listLoans(db: SQLiteDatabase): Promise<LoanListItem[]> {
     `SELECT loans.*, members.member_code, members.full_name AS member_name
      FROM loans
      INNER JOIN members ON members.id = loans.member_id
-     ORDER BY CASE loans.status WHEN 'active' THEN 0 WHEN 'paid' THEN 1 ELSE 2 END,
+     ORDER BY CASE WHEN loans.archived_at IS NOT NULL THEN 3
+       WHEN loans.status = 'active' THEN 0 WHEN loans.status = 'paid' THEN 1 ELSE 2 END,
        loans.loan_date DESC, loans.id DESC`
   );
 }
@@ -170,6 +171,16 @@ export async function createLoan(db: SQLiteDatabase, input: CreateLoanInput): Pr
     }
 
     await db.runAsync(
+      `INSERT INTO fund_transactions (
+         transaction_type, amount_centavos, transaction_date, reference_type, reference_id, notes
+       ) VALUES ('loan_release', ?, ?, 'loan', ?, ?)`,
+      input.principalAmountCentavos,
+      input.loanDate,
+      loanId,
+      input.alias?.trim() || 'Loan release'
+    );
+
+    await db.runAsync(
       `INSERT INTO audit_logs (action, entity_type, entity_id, details)
        VALUES (?, ?, ?, ?)`,
       'created', 'loan', loanId,
@@ -186,4 +197,59 @@ export async function createLoan(db: SQLiteDatabase, input: CreateLoanInput): Pr
     );
   });
   return loanId;
+}
+
+
+export async function archiveLoan(
+  db: SQLiteDatabase,
+  loanId: number,
+  reason = 'Archived from loan portfolio'
+): Promise<void> {
+  if (!Number.isSafeInteger(loanId) || loanId <= 0) throw new Error('Select a valid loan.');
+
+  await db.withTransactionAsync(async () => {
+    const loan = await db.getFirstAsync<{ id: number; archived_at: string | null }>(
+      'SELECT id, archived_at FROM loans WHERE id = ?', loanId
+    );
+    if (!loan) throw new Error('Loan record was not found.');
+    if (loan.archived_at) throw new Error('This loan is already archived.');
+
+    await db.runAsync(
+      `UPDATE loans
+       SET archived_at = datetime('now'), archive_reason = ?, updated_at = datetime('now')
+       WHERE id = ?`,
+      reason.trim() || 'Archived from loan portfolio',
+      loanId
+    );
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('archived', 'loan', ?, ?)`,
+      loanId,
+      JSON.stringify({ reason: reason.trim() || 'Archived from loan portfolio' })
+    );
+  });
+}
+
+export async function restoreLoan(db: SQLiteDatabase, loanId: number): Promise<void> {
+  if (!Number.isSafeInteger(loanId) || loanId <= 0) throw new Error('Select a valid loan.');
+
+  await db.withTransactionAsync(async () => {
+    const loan = await db.getFirstAsync<{ id: number; archived_at: string | null }>(
+      'SELECT id, archived_at FROM loans WHERE id = ?', loanId
+    );
+    if (!loan) throw new Error('Loan record was not found.');
+    if (!loan.archived_at) throw new Error('This loan is not archived.');
+
+    await db.runAsync(
+      `UPDATE loans SET archived_at = NULL, archive_reason = NULL,
+       updated_at = datetime('now') WHERE id = ?`,
+      loanId
+    );
+    await db.runAsync(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details)
+       VALUES ('restored', 'loan', ?, ?)`,
+      loanId,
+      'Restored to active loan portfolio'
+    );
+  });
 }

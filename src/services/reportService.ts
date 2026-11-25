@@ -66,7 +66,7 @@ export async function getMonthlySummary(
          ), 0) AS outstanding
        FROM loans
        LEFT JOIN loan_installments ON loan_installments.loan_id = loans.id
-       WHERE loans.status = 'active'`
+       WHERE loans.status = 'active' AND loans.archived_at IS NULL`
     ),
     db.getFirstAsync<{
       principal_released: number;
@@ -79,12 +79,12 @@ export async function getMonthlySummary(
            WHERE loan_date BETWEEN ? AND ?), 0) AS principal_released,
          COALESCE((SELECT SUM(CAST(ROUND(loans.principal_amount_centavos
            * COALESCE(loans.monthly_rate_basis_points, 0) / 10000.0) AS INTEGER))
-           FROM loans WHERE loans.status != 'cancelled'
+           FROM loans WHERE loans.status != 'cancelled' AND loans.archived_at IS NULL
            AND EXISTS (SELECT 1 FROM loan_installments i WHERE i.loan_id = loans.id
              AND i.due_date BETWEEN ? AND ?)), 0) AS interest_expected,
          COALESCE((SELECT SUM(i.scheduled_amount_centavos) FROM loan_installments i
            INNER JOIN loans l ON l.id = i.loan_id
-           WHERE l.status != 'cancelled' AND i.due_date BETWEEN ? AND ?), 0) AS installment_target,
+           WHERE l.status != 'cancelled' AND l.archived_at IS NULL AND i.due_date BETWEEN ? AND ?), 0) AS installment_target,
          COALESCE((SELECT SUM(amount_centavos) FROM payments
            WHERE paid_on BETWEEN ? AND ?), 0) AS collected`,
       start, end, start, end, start, end, start, end
@@ -127,7 +127,7 @@ export async function getMonthlySummary(
     db.getFirstAsync<{ count: number }>(
       `SELECT COUNT(*) AS count FROM loan_installments i
        INNER JOIN loans l ON l.id = i.loan_id
-       WHERE l.status = 'active' AND i.due_date < ?
+       WHERE l.status = 'active' AND l.archived_at IS NULL AND i.due_date < ?
          AND i.paid_amount_centavos < i.scheduled_amount_centavos`,
       start
     ),

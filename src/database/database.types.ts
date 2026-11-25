@@ -37,6 +37,8 @@ export type LoanRecord = {
   remarks: string | null;
   alias: string | null;
   term_months: number;
+  archived_at: string | null;
+  archive_reason: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -63,4 +65,16 @@ export type MonthlyMonitoringRecord = {
   actual_collected_centavos: number;
   outstanding_centavos: number;
   status: MonitoringStatus;
+};
+
+
+export type FundTransactionRecord = {
+  id: number;
+  transaction_type: FundTransactionType;
+  amount_centavos: number;
+  transaction_date: string;
+  reference_type: string | null;
+  reference_id: number | null;
+  notes: string | null;
+  created_at: string;
 };

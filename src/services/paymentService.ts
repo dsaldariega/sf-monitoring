@@ -49,7 +49,7 @@ export async function listLoansForPayment(db: SQLiteDatabase): Promise<PaymentLo
      FROM loans
      INNER JOIN members ON members.id = loans.member_id
      INNER JOIN loan_installments AS installments ON installments.loan_id = loans.id
-     WHERE loans.status = 'active'
+     WHERE loans.status = 'active' AND loans.archived_at IS NULL
      GROUP BY loans.id
      HAVING outstanding_centavos > 0
      ORDER BY loans.loan_date ASC, members.member_code COLLATE NOCASE ASC`
@@ -88,13 +88,14 @@ export async function recordLoanPayment(
     const loan = await db.getFirstAsync<{
       id: number;
       status: string;
+      archived_at: string | null;
       principal_amount_centavos: number;
       monthly_rate_basis_points: number | null;
       fixed_interest_centavos: number | null;
       term_months: number;
       interest_paid_centavos: number;
     }>(
-      `SELECT loans.id, loans.status, loans.principal_amount_centavos,
+      `SELECT loans.id, loans.status, loans.archived_at, loans.principal_amount_centavos,
          loans.monthly_rate_basis_points, loans.fixed_interest_centavos, loans.term_months,
          COALESCE(SUM(payments.interest_allocated_centavos), 0) AS interest_paid_centavos
        FROM loans
@@ -103,7 +104,7 @@ export async function recordLoanPayment(
        GROUP BY loans.id`,
       input.loanId
     );
-    if (!loan || loan.status !== 'active') {
+    if (!loan || loan.status !== 'active' || loan.archived_at) {
       throw new Error('This loan is no longer available for payment.');
     }
 

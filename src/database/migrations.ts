@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export const DATABASE_VERSION = 3;
+export const DATABASE_VERSION = 4;
 
 type Migration = {
   version: number;
@@ -156,6 +156,32 @@ const migrations: Migration[] = [
         ADD COLUMN penalty_paid_centavos INTEGER NOT NULL DEFAULT 0 CHECK (penalty_paid_centavos >= 0);
       ALTER TABLE payments
         ADD COLUMN penalty_allocated_centavos INTEGER NOT NULL DEFAULT 0 CHECK (penalty_allocated_centavos >= 0);
+    `,
+  },
+  {
+    version: 4,
+    sql: `
+      ALTER TABLE loans ADD COLUMN archived_at TEXT;
+      ALTER TABLE loans ADD COLUMN archive_reason TEXT;
+      CREATE INDEX idx_loans_archived_at ON loans(archived_at);
+
+      CREATE UNIQUE INDEX idx_fund_transactions_reference_unique
+        ON fund_transactions(transaction_type, reference_type, reference_id)
+        WHERE reference_type IS NOT NULL AND reference_id IS NOT NULL;
+
+      INSERT INTO fund_transactions (
+        transaction_type, amount_centavos, transaction_date,
+        reference_type, reference_id, notes
+      )
+      SELECT 'loan_release', loans.principal_amount_centavos, loans.loan_date,
+        'loan', loans.id, COALESCE(loans.alias, 'Loan release')
+      FROM loans
+      WHERE NOT EXISTS (
+        SELECT 1 FROM fund_transactions
+        WHERE transaction_type = 'loan_release'
+          AND reference_type = 'loan'
+          AND reference_id = loans.id
+      );
     `,
   },
 ];

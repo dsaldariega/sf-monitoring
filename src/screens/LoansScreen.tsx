@@ -7,6 +7,8 @@ import { SectionCard } from '../components/SectionCard';
 import type { MemberRecord } from '../database/database.types';
 import { listActiveMembers } from '../services/memberService';
 import {
+  archiveLoan,
+  restoreLoan,
   assessOverdueInstallments,
   buildInstallmentSchedule,
   calculateLoanTerms,
@@ -100,6 +102,37 @@ export function LoansScreen() {
     }
   };
 
+  const handleArchiveLoan = (loan: LoanListItem) => {
+    Alert.alert(
+      'Archive loan?',
+      'This hides the loan from the active portfolio and payment selector. Any unpaid balance remains; nothing is forgiven or erased. Payments, fund transactions, and audit history are retained, and you can restore the loan later.',
+      [
+        { text: 'Keep loan', style: 'cancel' },
+        {
+          text: 'Archive loan',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await archiveLoan(db, loan.id);
+              await refreshData();
+            } catch (cause) {
+              setError(cause instanceof Error ? cause.message : 'Unable to archive this loan.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRestoreLoan = async (loan: LoanListItem) => {
+    try {
+      await restoreLoan(db, loan.id);
+      await refreshData();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to restore this loan.');
+    }
+  };
+
   return (
     <ScreenLayout title="Loans" description="Register loans with a 15-day repayment schedule and automatic overdue penalties.">
       <SectionCard title="Register loan" subtitle="Interest and late charges follow the fixed loan rules.">
@@ -175,8 +208,8 @@ export function LoansScreen() {
         <PrimaryButton label={saving ? 'Saving…' : 'Save loan'} onPress={handleSaveLoan} disabled={saving || members.length === 0} />
       </SectionCard>
 
-      <SectionCard title={`Loan portfolio · ${loans.length}`} subtitle="Active, paid, and cancelled loan records.">
-        {loans.length === 0 ? <Text style={styles.empty}>No loan records yet.</Text> : loans.map(loan => (
+      <SectionCard title={`Loan portfolio · ${loans.filter(loan => !loan.archived_at).length}`} subtitle="Active, paid, and cancelled loan records. Archive a record to remove it from the active portfolio without erasing its history.">
+        {loans.filter(loan => !loan.archived_at).length === 0 ? <Text style={styles.empty}>No loan records in the active portfolio.</Text> : loans.filter(loan => !loan.archived_at).map(loan => (
           <View key={loan.id} style={styles.loanRow}>
             <View style={styles.loanHeader}>
               <Text style={styles.memberCode}>{loan.member_code}</Text>
@@ -186,6 +219,27 @@ export function LoansScreen() {
             {loan.alias ? <Text style={styles.meta}>{loan.member_name}</Text> : null}
             <Text style={styles.amount}>{formatCentavos(loan.principal_amount_centavos)}</Text>
             <Text style={styles.meta}>5% monthly · {loan.term_months} month(s) · Starts {loan.loan_date}</Text>
+            <Pressable style={styles.archiveButton} onPress={() => handleArchiveLoan(loan)}>
+              <Text style={styles.archiveButtonText}>Archive loan</Text>
+            </Pressable>
+          </View>
+        ))}
+      </SectionCard>
+
+      <SectionCard title={`Archived loans · ${loans.filter(loan => Boolean(loan.archived_at)).length}`} subtitle="Archived records are hidden from the active portfolio and payment selector. Their financial history is retained.">
+        {loans.filter(loan => Boolean(loan.archived_at)).length === 0 ? <Text style={styles.empty}>No archived loans.</Text> : loans.filter(loan => Boolean(loan.archived_at)).map(loan => (
+          <View key={loan.id} style={styles.loanRow}>
+            <View style={styles.loanHeader}>
+              <Text style={styles.memberCode}>{loan.member_code}</Text>
+              <Text style={styles.status}>ARCHIVED</Text>
+            </View>
+            <Text style={styles.memberName}>{loan.alias || loan.member_name}</Text>
+            {loan.alias ? <Text style={styles.meta}>{loan.member_name}</Text> : null}
+            <Text style={styles.amount}>{formatCentavos(loan.principal_amount_centavos)}</Text>
+            <Text style={styles.meta}>{loan.status.toUpperCase()} · {loan.loan_date} · {loan.archive_reason || 'Archived'}</Text>
+            <Pressable style={styles.restoreButton} onPress={() => void handleRestoreLoan(loan)}>
+              <Text style={styles.restoreButtonText}>Restore to portfolio</Text>
+            </Pressable>
           </View>
         ))}
       </SectionCard>
@@ -249,6 +303,10 @@ const styles = StyleSheet.create({
   meta: { color: theme.colors.muted, fontSize: 11 },
   status: { color: theme.colors.muted, fontSize: 10, fontWeight: '800' },
   activeStatus: { color: theme.colors.primary },
+  archiveButton: { alignSelf: 'flex-start', borderWidth: 1, borderColor: '#B42318', borderRadius: 9, paddingVertical: 7, paddingHorizontal: 11, marginTop: 4 },
+  archiveButtonText: { color: '#B42318', fontSize: 11, fontWeight: '800' },
+  restoreButton: { alignSelf: 'flex-start', borderWidth: 1, borderColor: theme.colors.primary, borderRadius: 9, paddingVertical: 7, paddingHorizontal: 11, marginTop: 4 },
+  restoreButtonText: { color: theme.colors.primary, fontSize: 11, fontWeight: '800' },
   memberDropdown: { borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, padding: 6, maxHeight: 220, backgroundColor: theme.colors.surface },
   memberOption: { padding: 13, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border, marginBottom: 8, gap: 3 },
   memberOptionSelected: { backgroundColor: theme.colors.accent, borderColor: theme.colors.primary },

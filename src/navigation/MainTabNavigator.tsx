@@ -4,6 +4,7 @@ import { MembersScreen } from '../screens/MembersScreen';
 import { LoansScreen } from '../screens/LoansScreen';
 import { PaymentsScreen } from '../screens/PaymentsScreen';
 import { ReportsScreen } from '../screens/ReportsScreen';
+import { FundScreen } from '../screens/FundScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import type { MainTabParamList } from './navigation.types';
 import { theme } from '../constants/theme';
@@ -38,6 +39,7 @@ export function MainTabNavigator() {
       <Tab.Screen name="Loans" component={LoansScreen} />
       <Tab.Screen name="Payments" component={PaymentsScreen} />
       <Tab.Screen name="Reports" component={ReportsScreen} />
+      <Tab.Screen name="Fund" component={FundScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

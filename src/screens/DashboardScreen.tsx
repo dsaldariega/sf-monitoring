@@ -8,16 +8,23 @@ import { SectionCard } from '../components/SectionCard';
 import { theme } from '../constants/theme';
 import { currentPeriodMonth, getMonthlySummary, type MonthlySummary } from '../services/reportService';
 import { formatCentavos } from '../utils/money';
+import { getFundSummary, type FundSummary } from '../services/fundService';
 
 export function DashboardScreen() {
   const db = useSQLiteContext();
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
+  const [fund, setFund] = useState<FundSummary | null>(null);
   const [error, setError] = useState('');
 
   const refresh = useCallback(async () => {
     try {
       setError('');
-      setSummary(await getMonthlySummary(db, currentPeriodMonth()));
+      const [nextSummary, nextFund] = await Promise.all([
+        getMonthlySummary(db, currentPeriodMonth()),
+        getFundSummary(db),
+      ]);
+      setSummary(nextSummary);
+      setFund(nextFund);
     } catch {
       setError('Unable to load dashboard figures from this device.');
     }
@@ -42,6 +49,7 @@ export function DashboardScreen() {
         <MetricCard label="Monthly target" value={formatCentavos(target)} helper="Scheduled installments" />
         <MetricCard label="Actual collected" value={formatCentavos(collected)} helper="Payments received this month" emphasized />
         <MetricCard label="Outstanding" value={formatCentavos(summary?.portfolioOutstandingCentavos ?? 0)} helper="Remaining loan portfolio" />
+        <MetricCard label="Available fund" value={formatCentavos(fund?.availableBalanceCentavos ?? 0)} helper="Current ledger balance" emphasized />
       </View>
       <SectionCard title="Monthly collection" subtitle="Cash collections compared with installment amounts scheduled for this month.">
         <View style={styles.progressTrack}>
