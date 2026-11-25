@@ -121,8 +121,8 @@ export function MembersScreen() {
               <Text style={styles.memberCode}>Member {member.member_code}</Text>
               <Text style={styles.memberName}>
                 {member.full_name.trim() || 'Name not provided'}
-              <Text style={styles.meta}>{member.heads} heads · {formatWeeklyDue(member.heads)}</Text>
               </Text>
+              <Text style={styles.meta}>{member.heads} heads · {formatWeeklyDue(member.heads)}</Text>
               {member.contact_number ? <Text style={styles.meta}>{member.contact_number}</Text> : null}
               {member.is_active !== 1 ? <Text style={styles.inactive}>Inactive</Text> : null}
             </View>
