@@ -108,11 +108,9 @@ export function ReportsScreen() {
       setExportModalVisible(false);
       showToast(`${displayMonth(period)} CSV export is ready to share.`, 'success');
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Unable to export this report.",
-      );
+      const message = cause instanceof Error ? cause.message : "Unable to export this report.";
+      setError(message);
+      showToast(message, 'error');
     } finally {
       setExporting(false);
     }
