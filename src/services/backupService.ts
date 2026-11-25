@@ -41,9 +41,9 @@ export async function exportDatabaseBackup(db: SQLiteDatabase): Promise<void> {
   await shareFile(file, 'Save sinking fund database backup', 'application/octet-stream');
 }
 
-export async function restoreDatabaseBackup(db: SQLiteDatabase): Promise<void> {
+export async function restoreDatabaseBackup(db: SQLiteDatabase): Promise<boolean> {
   const picked = await File.pickFileAsync();
-  if (picked.canceled) return;
+  if (picked.canceled) return false;
 
   const bytes = await picked.result.bytes();
   if (bytes.byteLength < 16) {
@@ -89,6 +89,7 @@ export async function restoreDatabaseBackup(db: SQLiteDatabase): Promise<void> {
       destDatabase: db,
       destDatabaseName: 'main',
     });
+    return true;
   } finally {
     await importedDb.closeAsync();
   }
