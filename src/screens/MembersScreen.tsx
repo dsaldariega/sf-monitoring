@@ -13,6 +13,7 @@ export function MembersScreen() {
   const [members, setMembers] = useState<MemberRecord[]>([]);
   const [memberCode, setMemberCode] = useState('');
   const [fullName, setFullName] = useState('');
+  const [heads, setHeads] = useState('1');
   const [contactNumber, setContactNumber] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -35,9 +36,10 @@ export function MembersScreen() {
     setError('');
     setSaving(true);
     try {
-      await createMember(db, { memberCode, fullName, contactNumber });
+      await createMember(db, { memberCode, fullName, heads: Number(heads), contactNumber });
       setMemberCode('');
       setFullName('');
+      setHeads('1');
       setContactNumber('');
       await refreshMembers();
       Alert.alert('Member added', 'The member record was saved on this device.');
@@ -87,6 +89,13 @@ export function MembersScreen() {
           keyboardType="number-pad"
         />
         <Field
+          label="Heads"
+          value={heads}
+          onChangeText={setHeads}
+          placeholder="e.g. 4"
+          keyboardType="number-pad"
+        />
+        <Field
           label="Full name (optional)"
           value={fullName}
           onChangeText={setFullName}
@@ -112,6 +121,7 @@ export function MembersScreen() {
               <Text style={styles.memberCode}>Member {member.member_code}</Text>
               <Text style={styles.memberName}>
                 {member.full_name.trim() || 'Name not provided'}
+              <Text style={styles.meta}>{member.heads} heads · {formatWeeklyDue(member.heads)}</Text>
               </Text>
               {member.contact_number ? <Text style={styles.meta}>{member.contact_number}</Text> : null}
               {member.is_active !== 1 ? <Text style={styles.inactive}>Inactive</Text> : null}
@@ -155,6 +165,10 @@ function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: (
       <Text style={styles.primaryButtonText}>{label}</Text>
     </Pressable>
   );
+}
+
+function formatWeeklyDue(heads: number): string {
+  return `PHP ${(heads * 50).toLocaleString('en-PH')}/week`;
 }
 
 const styles = StyleSheet.create({
