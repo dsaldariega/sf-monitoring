@@ -22,10 +22,10 @@ export function MainTabNavigator() {
       }}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="SinkingFund" component={SinkingFundScreen} options={{ tabBarLabel: "Sinking Fund", title: "Sinking Fund" }} />
       <Tab.Screen name="Members" component={MembersScreen} />
       <Tab.Screen name="Loans" component={LoansScreen} />
       <Tab.Screen name="Payments" component={PaymentsScreen} />
-      <Tab.Screen name="SinkingFund" component={SinkingFundScreen} options={{ tabBarLabel: "Sinking Fund", title: "Sinking Fund" }} />
       <Tab.Screen name="Reports" component={ReportsScreen} options={{ tabBarLabel: "Loan Reports", title: "Loan Reports" }} />
       <Tab.Screen name="Fund" component={FundScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
