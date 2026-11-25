@@ -132,11 +132,12 @@ export function ReportsScreen() {
               await refresh();
               showToast(`${displayMonth(period)} loan report finalized successfully.`, 'success');
             } catch (cause) {
-              setError(
+              const message =
                 cause instanceof Error
                   ? cause.message
-                  : "Unable to finalize this report.",
-              );
+                  : "Unable to finalize this report.";
+              setError(message);
+              showToast(message, 'error');
             } finally {
               setBusy(false);
             }
